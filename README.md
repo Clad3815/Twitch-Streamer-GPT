@@ -10,6 +10,7 @@ This script is inspired by [AIAssistantStreamer](https://github.com/anisayari/AI
 
 - [Twitch Streamer GPT - Reinventing Twitch Streams](#twitch-streamer-gpt---reinventing-twitch-streams)
   - [Table of Contents](#table-of-contents)
+  - [Information](#information)
   - [Getting Started](#getting-started)
   - [Features](#features)
   - [Integration with OpenAI / GPT-3.5 Turbo or GPT-4](#integration-with-openai--gpt-35-turbo-or-gpt-4)
@@ -32,6 +33,11 @@ This script is inspired by [AIAssistantStreamer](https://github.com/anisayari/AI
     - [Twitch Broadcaster](#twitch-broadcaster)
     - [Twitch Events](#twitch-events)
     - [Conclusion and Support](#conclusion-and-support)
+
+
+## Information
+
+This script is going to be updated regularly to add new features, fix bugs, and improve the overall experience. If you have any suggestions, feel free to open an issue or contact me on Discord at "clad3815".
 
 ## Getting Started
 
