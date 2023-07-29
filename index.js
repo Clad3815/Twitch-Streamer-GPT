@@ -205,22 +205,22 @@ async function startListening() {
     }
 }
 
-// Set up bot commands
-const botCommands = [
-    createBotCommand('ask', async (params, { userName, reply }) => {
-        const question = params.join(' ');
-        await voiceHandler.streamMP3FromGoogleTTS(`Message de ${userName}: ${question}`, 'fr-FR');
-        answerToMessage(userName, question).then((answer) => {
-            reply(answer);
-        });
-    }),
-];
+// // Set up bot commands
+// const botCommands = [
+//     createBotCommand('ask', async (params, { userName, reply }) => {
+//         const question = params.join(' ');
+//         await voiceHandler.streamMP3FromGoogleTTS(`Message de ${userName}: ${question}`, 'fr-FR');
+//         answerToMessage(userName, question).then((answer) => {
+//             reply(answer);
+//         });
+//     }),
+// ];
 
 // Set up Twitch bot
 const bot = new Bot({
     authProvider,
     channels: [channelName],
-    commands: botCommands
+    // commands: botCommands
 });
 
 console.log("Bot started and listening to channel " + channelName);
