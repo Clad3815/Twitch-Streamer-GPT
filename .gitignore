@@ -1,5 +1,4 @@
 node_modules
 .env
 package-lock.json
-*.mp3
 *.ppn
