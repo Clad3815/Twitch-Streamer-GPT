@@ -1,4 +1,5 @@
 // Import required modules
+const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegStatic = require('ffmpeg-static');
 const Speaker = require('speaker');
@@ -55,7 +56,7 @@ async function streamMP3FromGoogleTTS(text, lang = 'fr') {
 }
 
 // Function to create audio stream and speaker (common function used in several places)
-function createAudioStreamAndSpeaker(audioStream) {
+async function createAudioStreamAndSpeaker(audioStream) {
     // Create a speaker instance
     const speaker = new Speaker({
         channels: 2,
@@ -79,10 +80,40 @@ function createAudioStreamAndSpeaker(audioStream) {
     });
 }
 
+
+async function streamMP3FromFile(filePath) {
+    // Create a readable stream from the file
+    const audioStream = fs.createReadStream(filePath);
+
+    // Create a speaker instance
+    const speaker = new Speaker({
+        channels: 2,
+        bitDepth: 16,
+        sampleRate: 48000,
+    });
+
+    return new Promise((resolve, reject) => {
+        // Convert MP3 to PCM using FFmpeg and stream to Speaker
+        ffmpeg(audioStream)
+            .outputFormat('s16le')
+            .audioChannels(2)
+            .audioFrequency(48000)
+            .on('error', (err) => {
+                console.error('FFmpeg error:', err);
+                reject(err);
+            })
+            .pipe(speaker)
+            .on('finish', resolve)
+            .on('error', reject);
+    });
+}
+
+
 // Export your functions
 module.exports = {
     generateElevenLabsTTS,
     getElevenLabsVoices,
     streamMP3FromGoogleTTS,
-    createAudioStreamAndSpeaker
+    createAudioStreamAndSpeaker,
+    streamMP3FromFile
 };

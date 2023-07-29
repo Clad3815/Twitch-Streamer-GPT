@@ -2,9 +2,6 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegStatic = require('ffmpeg-static');
-const Speaker = require('speaker');
 const { Bot, createBotCommand } = require('@twurple/easy-bot');
 const { StaticAuthProvider } = require('@twurple/auth');
 const { PubSubClient } = require('@twurple/pubsub');
@@ -42,9 +39,6 @@ const MAX_TOKENS = { // Define the maximum tokens for each model
     'gpt-4': 8192,
     'gpt-4-32k': 32768
 };
-
-// Configure ffmpeg
-ffmpeg.setFfmpegPath(ffmpegStatic);
 
 // Initialize OpenAI API
 const openai = new OpenAIApi(new Configuration({
@@ -275,40 +269,13 @@ if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
 async function readRandomWaitMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wait_mp3'));
     const randomMP3 = mp3Files[Math.floor(Math.random() * mp3Files.length)];
-    return await streamMP3FromFile(path.join(__dirname, 'wait_mp3', randomMP3));
+    return await voiceHandler.streamMP3FromFile(path.join(__dirname, 'wait_mp3', randomMP3));
 }
 
 async function readRandomWakeWordAnswerMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wake_word_answer'));
     const randomMP3 = mp3Files[Math.floor(Math.random() * mp3Files.length)];
-    return await streamMP3FromFile(path.join(__dirname, 'wake_word_answer', randomMP3));
-}
-
-async function streamMP3FromFile(filePath) {
-    // Create a readable stream from the file
-    const audioStream = fs.createReadStream(filePath);
-
-    // Create a speaker instance
-    const speaker = new Speaker({
-        channels: 2,
-        bitDepth: 16,
-        sampleRate: 48000,
-    });
-
-    return new Promise((resolve, reject) => {
-        // Convert MP3 to PCM using FFmpeg and stream to Speaker
-        ffmpeg(audioStream)
-            .outputFormat('s16le')
-            .audioChannels(2)
-            .audioFrequency(48000)
-            .on('error', (err) => {
-                console.error('FFmpeg error:', err);
-                reject(err);
-            })
-            .pipe(speaker)
-            .on('finish', resolve)
-            .on('error', reject);
-    });
+    return await voiceHandler.streamMP3FromFile(path.join(__dirname, 'wake_word_answer', randomMP3));
 }
 
 function generatePromptFromGoal(goal) {
