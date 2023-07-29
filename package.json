@@ -1,0 +1,31 @@
+{
+  "name": "twitch-streamer-gpt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "choose-mic": "node index.js --choose-mic",
+    "calibrate": "node index.js --calibrate"
+  },
+  "author": "Clad3815",
+  "license": "ISC",
+  "dependencies": {
+    "@ozymandiasthegreat/wakeword-zero": "^2.0.5",
+    "@picovoice/porcupine-node": "^2.2.1",
+    "@picovoice/pvrecorder-node": "^1.2.0",
+    "@twurple/easy-bot": "^7.0.1",
+    "@twurple/pubsub": "^7.0.1",
+    "dotenv": "^16.3.1",
+    "elevenlabs-node": "^1.1.3",
+    "ffmpeg-static": "^5.1.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "google-tts-api": "^2.0.2",
+    "gpt-tokens": "^1.1.2",
+    "openai": "^3.3.0",
+    "say": "^0.16.0",
+    "speaker": "^0.5.4",
+    "wavefile": "^11.0.0"
+  }
+}
