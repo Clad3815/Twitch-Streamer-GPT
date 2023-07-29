@@ -1,4 +1,4 @@
-# Twitch Streamer Animation Script - Reinventing Twitch Streams
+# Twitch Streamer GPT - Reinventing Twitch Streams
 
 Ever wished to infuse your Twitch streams with a vibrant, interactive, and engaging vibe? The solution is right here! Presenting our lively Twitch Streamer Animation Script powered by NodeJS, designed to elevate your Twitch streams to the next level of entertainment. This script provides a diverse range of advanced modules like Easy-Bot, Twurple, OpenAI, and much more. Unleash its magic into your Twitch streams for an unforgettable experience!
 
@@ -8,7 +8,7 @@ This script is inspired by [AIAssistantStreamer](https://github.com/anisayari/AI
 
 ## Table of Contents
 
-- [Twitch Streamer Animation Script - Reinventing Twitch Streams](#twitch-streamer-animation-script---reinventing-twitch-streams)
+- [Twitch Streamer GPT - Reinventing Twitch Streams](#twitch-streamer-gpt---reinventing-twitch-streams)
   - [Table of Contents](#table-of-contents)
   - [Getting Started](#getting-started)
   - [Features](#features)
@@ -41,7 +41,7 @@ Hop on this exciting journey with a few simple steps:
 
 2. Clone or download the repository to your local machine:
     ```bash
-    git clone https://github.com/Clad3815/twitch-streamer-animation-script.git
+    git clone https://github.com/Clad3815/Twitch-Streamer-GPT.git
     ```
     Not comfortable with cloning? No worries! Download the zip version of the repository and extract it at a suitable location. This is an easier alternative for our non-technical audience.
 
