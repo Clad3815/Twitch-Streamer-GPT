@@ -12,7 +12,7 @@ This script is inspired by [AIAssistantStreamer](https://github.com/anisayari/AI
   - [Table of Contents](#table-of-contents)
   - [Getting Started](#getting-started)
   - [Features](#features)
-  - [Integration with OpenAI / GPT-3.5 Turbo](#integration-with-openai--gpt-35-turbo)
+  - [Integration with OpenAI / GPT-3.5 Turbo or GPT-4](#integration-with-openai--gpt-35-turbo-or-gpt-4)
     - [Personalized Responses](#personalized-responses)
   - [What's New \& Exciting](#whats-new--exciting)
       - [Text-to-Speech Announcements](#text-to-speech-announcements)
@@ -75,11 +75,11 @@ Our Twitch Streamer Animation Script is backed with a wide array of amazing feat
 * **Ongoing Calibration**: The script adapts to your environment and offers optimal performance.
 * **Custom Command Settings**: With options to set custom commands, take full control over your streaming bot.
 
-## Integration with OpenAI / GPT-3.5 Turbo
+## Integration with OpenAI / GPT-3.5 Turbo or GPT-4
 
-Our script features a strong integration with the powerful GPT-3.5 Turbo model from OpenAI to manage intricate interactive features. The model generates responses based on live stream events and natural language interactions with viewers.
+Our script features a strong integration with the powerful GPT-3.5 Turbo (or GPT-4) model from OpenAI to manage intricate interactive features. The model generates responses based on live stream events and natural language interactions with viewers.
 
-The GPT-3.5 Turbo model takes several inputs into account for making a response:
+The GPT-3.5 Turbo  (or GPT-4)  model takes several inputs into account for making a response:
 
 1. **Chat History**: The interaction history till the current point helps derive responses that fit the context perfectly.
 
@@ -87,33 +87,33 @@ The GPT-3.5 Turbo model takes several inputs into account for making a response:
 
 3. **Channel and Bot Details**: Information about the bot and channel also contributes to response generation.
 
-With GPT-3.5 Turbo, the responses generated are not only contextually apt but also engage the audience with wit and interesting conversations.
+With GPT-3.5 Turbo  (or GPT-4) , the responses generated are not only contextually apt but also engage the audience with wit and interesting conversations.
 
 ### Personalized Responses
 
-You can provide custom instructions to the GPT-3.5 Turbo model to generate responses that are more personalized and relevant to your stream. 
+You can provide custom instructions to the GPT-3.5 Turbo  (or GPT-4)  model to generate responses that are more personalized and relevant to your stream. 
 
-To do that edit the file `prompts/custom_instructions.txt` and add your custom instructions. These instructions will be injected into the GPT-3.5 Turbo model to generate responses. (You can use any language you want)
+To do that edit the file `prompts/custom_instructions.txt` and add your custom instructions. These instructions will be injected into the GPT-3.5 Turbo  (or GPT-4) model to generate responses. (You can use any language you want)
 
 ## What's New & Exciting
 
 #### Text-to-Speech Announcements
 
-Access automated TTS announcements for numerous activities, such as new subscriptions, cheers, resubscriptions, gift subscriptions, etc. Unique, context-relevant messages are composed by utilizing OpenAI GPT-3.5 Turbo and are converted into speech using ElevenLabs TTS API.
+Access automated TTS announcements for numerous activities, such as new subscriptions, cheers, resubscriptions, gift subscriptions, etc. Unique, context-relevant messages are composed by utilizing OpenAI GPT-3.5 Turbo (or GPT-4)  and are converted into speech using ElevenLabs TTS API.
 
 #### Chat Interactions
 
-Apart from engaging viewers with voice interactions, our bot also interacts with chat messages using the 'ask' command. The script generates witty responses with GPT-3.5 Turbo, converts them into speech and jots them down into the chat.
+Apart from engaging viewers with voice interactions, our bot also interacts with chat messages using the 'ask' command. The script generates witty responses with GPT-3.5 Turbo (or GPT-4), converts them into speech and jots them down into the chat.
 
 #### Point Redemptions & Cheering Reactions
 
 The script also responds to special events like cheerings and point redemptions. You get personalized TTS announcements, OpenAI-generated responses, and even modifications in visual animations, resulting in an engaging experience for your viewers.
 
-To make the best use of this feature, our script combines the prowess of OpenAI's GPT-3.5 Turbo model and various APIs provided in the Twitch and ElevenLabs SDK.
+To make the best use of this feature, our script combines the prowess of OpenAI's GPT-3.5 Turbo (or GPT-4) model and various APIs provided in the Twitch and ElevenLabs SDK.
 
 #### Voice Command Activation
 
-Our script uses the Porcupine wake word engine to identify a specific voice command for capturing the streamer's voice. OpenAI's Whisper ASR system transcribes the detected voice, and GPT-3.5 Turbo analyzes it to initiate a suitable action.
+Our script uses the Porcupine wake word engine to identify a specific voice command for capturing the streamer's voice. OpenAI's Whisper ASR system transcribes the detected voice, and GPT-3.5 Turbo (or GPT-4)  analyzes it to initiate a suitable action.
 
 #### Regular Calibration and Updates
 
