@@ -17,7 +17,6 @@ This script is inspired by [AIAssistantStreamer](https://github.com/anisayari/AI
     - [Personalized Responses](#personalized-responses)
   - [What's New \& Exciting](#whats-new--exciting)
       - [Text-to-Speech Announcements](#text-to-speech-announcements)
-      - [Chat Interactions](#chat-interactions)
       - [Point Redemptions \& Cheering Reactions](#point-redemptions--cheering-reactions)
       - [Voice Command Activation](#voice-command-activation)
       - [Regular Calibration and Updates](#regular-calibration-and-updates)
@@ -105,11 +104,7 @@ To do that edit the file `prompts/custom_instructions.txt` and add your custom i
 
 #### Text-to-Speech Announcements
 
-Access automated TTS announcements for numerous activities, such as new subscriptions, cheers, resubscriptions, gift subscriptions, etc. Unique, context-relevant messages are composed by utilizing OpenAI GPT-3.5 Turbo (or GPT-4)  and are converted into speech using ElevenLabs TTS API.
-
-#### Chat Interactions
-
-Apart from engaging viewers with voice interactions, our bot also interacts with chat messages using the 'ask' command. The script generates witty responses with GPT-3.5 Turbo (or GPT-4), converts them into speech and jots them down into the chat.
+Access automated TTS announcements for numerous activities, such as new subscriptions, cheers, resubscriptions, gift subscriptions, etc. Unique, context-relevant messages are composed by utilizing OpenAI GPT-3.5 Turbo (or GPT-4) and are converted into speech using ElevenLabs TTS API.
 
 #### Point Redemptions & Cheering Reactions
 
