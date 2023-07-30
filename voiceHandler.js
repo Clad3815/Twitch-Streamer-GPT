@@ -14,8 +14,12 @@ ffmpeg.setFfmpegPath(ffmpegStatic);
 async function generateElevenLabsTTS(text) {
     // Get the audio stream
     let audioStream = null;
+    let model = 'eleven_multilingual_v1';
+    if (process.env.ELEVENLABS_VOICE_MODEL) {
+        model = process.env.ELEVENLABS_VOICE_MODEL;
+    }
     try {
-        audioStream = await voice.textToSpeechStream(process.env.ELEVENLABS_APIKEY, process.env.ELEVENLABS_VOICEID, text, process.env.ELEVENLABS_VOICE_STABILITY, process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST, 'eleven_multilingual_v1');
+        audioStream = await voice.textToSpeechStream(process.env.ELEVENLABS_APIKEY, process.env.ELEVENLABS_VOICEID, text, process.env.ELEVENLABS_VOICE_STABILITY, process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST, model);
         console.log("Got the audio stream, playing it");
         // Convert MP3 to PCM using FFmpeg and stream to Speaker
         return createAudioStreamAndSpeaker(audioStream);
