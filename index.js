@@ -309,7 +309,6 @@ function calculateGPTTokens(messages, model) {
     });
     return data.usedTokens;
 }
-
 function getCleanedMessagesForModel(messages, model) {
     let maxTokensForModel = process.env.OPENAI_MAX_TOKENS_TOTAL;
 
@@ -324,7 +323,8 @@ function getCleanedMessagesForModel(messages, model) {
     let tokensRemoved = 0;
     let messagesRemoved = 0;
 
-    for (let i = messages.length - 1; i > 0; i--) { // Start from the end, skip system message
+    // Start from the second element on
+    for (let i = 1; i < messages.length; i++) { 
         const message = messages[i];
         const messageTokens = calculateGPTTokens([message], model);
 
@@ -334,8 +334,8 @@ function getCleanedMessagesForModel(messages, model) {
             continue;
         }
 
-        // Add the message to the start of the cleaned messages
-        cleanedMessages.unshift(message);
+        // Add the message to the end of the cleaned messages
+        cleanedMessages.push(message); // instead of unshift()
 
         // Add the tokens to the total
         totalTokens += messageTokens;
@@ -343,7 +343,6 @@ function getCleanedMessagesForModel(messages, model) {
 
     return cleanedMessages;
 }
-
 
 // Functions
 async function answerToMessage(messageUserName, message, goal = 'answerToMessage') {
@@ -371,8 +370,8 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
             result = await openai.createChatCompletion({
                 model: AIModel,
                 messages: getCleanedMessagesForModel(gptMessages, AIModel),
-                temperature: process.env.OPENAI_MODEL_TEMP,
-                max_tokens: process.env.OPENAI_MAX_TOKENS_ANSWER,
+                temperature: parseFloat(process.env.OPENAI_MODEL_TEMP),
+                max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER),
             });
         } catch (error) {
             console.log("Error while sending message to OpenAI API");
@@ -380,7 +379,6 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
             retries++;
         }
     }
-
     if (result == null) {
         throw new Error("Error while sending message to OpenAI API");
     }
