@@ -166,13 +166,6 @@ async function startListening() {
 
     while (1) {
         const frames = await recorder.read();
-        const index = porcupineHandle.process(frames);
-        if (index !== -1) {
-            console.log(`Wake word detected, start recording !`);
-            readRandomWakeWordAnswerMP3();
-            recordingFrames = [];
-            isRecording = true;
-        }
 
         if (isRecording) {
             recordingFrames.push(frames);
@@ -194,6 +187,14 @@ async function startListening() {
                 }
             } else {
                 silenceFramesCount = 0;
+            }
+        } else {
+            const index = porcupineHandle.process(frames);
+            if (index !== -1) {
+                console.log(`Wake word detected, start recording !`);
+                readRandomWakeWordAnswerMP3();
+                recordingFrames = [];
+                isRecording = true;
             }
         }
     }
