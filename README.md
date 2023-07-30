@@ -66,7 +66,7 @@ Hop on this exciting journey with a few simple steps:
     ```bash
     npm start
     ```
-    You can also start the script only in the console (while be closed when the console is closed) by running `node index.js` instead.
+    You can also start the script only in the console (will be closed when the console is closed) by running `node index.js` instead.
 
 
 Voila! Your very own animation script is up and running! Now, gear up to amplify the fun and interactivity of your Twitch streams.
