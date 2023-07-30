@@ -70,7 +70,7 @@ let voiceData = null;
 let SILENCE_THRESHOLD;
 const CONFIG_FILE = './config.json';
 
-const MAX_SILENCE_FRAMES = 48;
+const MAX_SILENCE_FRAMES = 96;
 
 let recorder;
 let recordingFrames = [];
