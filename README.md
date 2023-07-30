@@ -128,7 +128,7 @@ Setting up this script involves three simple steps: defining the "Wake Word", se
 
 ### Step 1: Customizing Wake Word
 
-The 'wake word' is a specific word or phrase determined by the streamer. Saying this triggers the GPT application to listen and respond to the streamer's command, creating a unique interaction during the stream.
+The 'wake word' identifies a precise word or phrase chosen by the streamer. When spoken into their microphone, this cues the GPT application to listen and react indirectly to the streamer's command, enriching the interaction during the live stream.
 You can find 'porcupine_params_*.pv' file and several '.ppn' files within the 'wake_word' directory.
 
 - **porcupine_params_*.pv file**: This file is required for the Picovoice Wake Word engine. It needs to match the language of your wake words. The script automatically uses the first found file in this directory. By default, the script includes the French language. In case you wish to switch, delete `porcupine_params_fr.pv`, download the desired language from [here](https://github.com/Picovoice/porcupine/tree/master/lib/common), and place it into the 'wake_word' directory.
