@@ -398,7 +398,7 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
     });
 
     console.log("Generating TTS of the message with ElevenLabs API");
-    voiceHandler.generateElevenLabsTTS(textAnswer);
+    await voiceHandler.generateElevenLabsTTS(textAnswer);
     return textAnswer;
 }
 
