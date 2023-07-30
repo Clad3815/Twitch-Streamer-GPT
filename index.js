@@ -70,7 +70,7 @@ let voiceData = null;
 let SILENCE_THRESHOLD;
 const CONFIG_FILE = './config.json';
 
-const MAX_SILENCE_FRAMES = 48;
+const MAX_SILENCE_FRAMES = 25;
 
 let recorder;
 let recordingFrames = [];
@@ -135,6 +135,11 @@ function saveRecording() {
     // Create wave file using the 'wavefile' module
     let waveFile = new WaveFile();
 
+    // Delete the recording file if it already exists
+    if (fs.existsSync("recording.wav")) {
+        fs.unlinkSync("recording.wav");
+    }
+
     // Convert the recordingFrames to Int16Array
     const audioData = new Int16Array(recordingFrames.length * porcupineHandle.frameLength);
     for (let i = 0; i < recordingFrames.length; i++) {
@@ -152,8 +157,6 @@ async function transcriptRecording() {
     const result = await speechToText("recording.wav");
     console.log("Detected sentence: " + result);
     console.log("Transcripting recording done");
-    // Delete the recording
-    fs.unlinkSync("recording.wav");
     return result;
 }
 
@@ -171,7 +174,7 @@ async function startListening() {
             recordingFrames.push(frames);
 
             // Check for silence
-            let isSilence = frames.every(frame => Math.abs(frame) < SILENCE_THRESHOLD);
+            let isSilence = frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;
             if (isSilence) {
                 silenceFramesCount++;
                 if (silenceFramesCount > MAX_SILENCE_FRAMES) {
