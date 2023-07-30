@@ -270,12 +270,14 @@ if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
 async function readRandomWaitMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wait_mp3'));
     const randomMP3 = mp3Files[Math.floor(Math.random() * mp3Files.length)];
+    console.log("Playing wait mp3: " + randomMP3);
     return await voiceHandler.streamMP3FromFile(path.join(__dirname, 'wait_mp3', randomMP3));
 }
 
 async function readRandomWakeWordAnswerMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wake_word_answer'));
     const randomMP3 = mp3Files[Math.floor(Math.random() * mp3Files.length)];
+    console.log("Playing wake word answer: " + randomMP3);
     return await voiceHandler.streamMP3FromFile(path.join(__dirname, 'wake_word_answer', randomMP3));
 }
 
