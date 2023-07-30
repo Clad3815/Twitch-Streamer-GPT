@@ -25,6 +25,9 @@ This project is inspired by the impressive work of [AIAssistantStreamer](https:/
     - [Step 1: Customizing Wake Word](#step-1-customizing-wake-word)
     - [Step 2: Configuring MP3 Responses](#step-2-configuring-mp3-responses)
     - [Step 3: Tweaking Environment Variables](#step-3-tweaking-environment-variables)
+  - [Twitch Bot and Broadcaster Scopes](#twitch-bot-and-broadcaster-scopes)
+    - [For Bot:](#for-bot)
+    - [For Broadcaster:](#for-broadcaster)
   - [Essential Environment Variables](#essential-environment-variables)
     - [OpenAI](#openai)
     - [Porcupine](#porcupine)
@@ -165,6 +168,29 @@ Some services like OpenAI and Twitch API need unique credentials for authenticat
 Be certain to fill in the `.env` file with accurate credential details for each service to set the environment variables correctly.
 
 **Important**: As it contains confidential data, ensure the `.env` file is always kept hidden to prevent inappropriate use.
+
+
+## Twitch Bot and Broadcaster Scopes
+
+To set up your application credentials correctly, include the necessary scopes for both your bot and broadcaster from Twitch.
+
+### For Bot: 
+
+You'll need to include these scopes: 
+
+- `chat:read`: Read chat messages from all users including users in channels where the bot has been modded.
+- `chat:edit`: Send chat and channel messages.
+
+### For Broadcaster:
+
+You'll need to include these scopes:
+
+- `chat:read`: Read chat messages from all users including users in channels where the bot has been modded.
+- `chat:edit`: Send chat and channel messages.
+- `channel:read:redemptions`: Read redemption objects and to read all redemptions of Custom Rewards.
+- `bits:read`: Read Bits information for the channel.
+- `channel_subscriptions`: Read all subscriptions to a channel.
+
 
 
 ## Essential Environment Variables
