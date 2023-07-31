@@ -7,6 +7,9 @@ const stream = require('stream');
 const googleTTS = require('google-tts-api');
 const voice = require("elevenlabs-node");
 
+const { spawn } = require('child_process');
+
+
 // Configure ffmpeg
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
@@ -66,6 +69,7 @@ async function createAudioStreamAndSpeaker(audioStream) {
         channels: 2,
         bitDepth: 16,
         sampleRate: 48000,
+        device: process.env.SPEAKER_DEVICE
     });
 
     return new Promise((resolve, reject) => {
@@ -94,6 +98,7 @@ async function streamMP3FromFile(filePath) {
         channels: 2,
         bitDepth: 16,
         sampleRate: 48000,
+        device: process.env.SPEAKER_DEVICE
     });
 
     return new Promise((resolve, reject) => {
@@ -113,11 +118,50 @@ async function streamMP3FromFile(filePath) {
 }
 
 
+
+function listSoundDevices() {
+    return new Promise((resolve, reject) => {
+        const wmic = spawn('wmic', ['path', 'Win32_SoundDevice', 'get', '/format:list']);
+
+        let output = '';
+        let error = '';
+
+        wmic.stdout.on('data', (data) => {
+            output += data;
+        });
+
+        wmic.stderr.on('data', (data) => {
+            error += data;
+        });
+
+        wmic.on('close', (code) => {
+            if (code !== 0) {
+                return reject(new Error(`wmic command exited with code ${code}: ${error}`));
+            }
+
+            const devices = output
+                .trim()                            // Remove trailing newline
+                .split(/\r?\n/)                    // Split devices by single newline character
+                .map(deviceInfo => {
+                    const keyValue = deviceInfo.split('=');
+                    const nameIndex = keyValue.findIndex(key => key.trim() === 'Caption');
+                    return nameIndex !== -1 ? keyValue[nameIndex + 1].trim() : null;
+                })
+                .filter(name => name)               // Remove null values
+                .map((name, id) => ({ id, name })); // Add IDs
+
+            resolve(devices);
+        });
+    });
+}
+
+
 // Export your functions
 module.exports = {
     generateElevenLabsTTS,
     getElevenLabsVoices,
     streamMP3FromGoogleTTS,
     createAudioStreamAndSpeaker,
-    streamMP3FromFile
+    streamMP3FromFile,
+    listSoundDevices
 };

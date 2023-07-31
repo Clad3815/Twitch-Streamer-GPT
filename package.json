@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "choose-mic": "node index.js --choose-mic",
-    "calibrate": "node index.js --calibrate"
+    "calibrate": "node index.js --calibrate",
+    "choose-speaker": "node index.js --choose-speaker"
   },
   "author": "Clad3815",
   "license": "ISC",
@@ -22,6 +23,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "google-tts-api": "^2.0.2",
     "gpt-tokens": "^1.1.2",
+    "node-vad": "^1.1.4",
     "openai": "^3.3.0",
     "speaker": "^0.5.4",
     "wavefile": "^11.0.0"
