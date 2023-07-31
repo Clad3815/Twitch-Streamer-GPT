@@ -20,6 +20,10 @@ const vad = new VAD(VAD.Mode.NORMAL);
 // Load environment variables
 dotenv.config();
 
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 let porcupineHandle;
 // Set up constants
 const AIModel = process.env.OPENAI_MODEL;
