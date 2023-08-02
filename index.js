@@ -399,7 +399,7 @@ function getCleanedMessagesForModel(messages, model) {
 async function answerToMessage(messageUserName, message, goal = 'answerToMessage') {
     let systemPrompt = generatePromptFromGoal(goal);
 
-    console.log(systemPrompt);
+    // console.log(systemPrompt);
     if (messageUserName == channelName) {
         messageUserName += " (the streamer)";
     }
