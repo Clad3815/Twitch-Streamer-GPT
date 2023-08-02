@@ -71,21 +71,25 @@ async function createAudioStreamAndSpeaker(audioStream) {
         sampleRate: 48000,
         device: process.env.SPEAKER_DEVICE
     });
-
-    return new Promise((resolve, reject) => {
-        // Convert MP3 to PCM using FFmpeg and stream to Speaker
-        ffmpeg(audioStream)
-            .outputFormat('s16le')
-            .audioChannels(2)
-            .audioFrequency(48000)
-            .on('error', (err) => {
-                console.error('FFmpeg error:', err);
-                reject(err);
-            })
-            .pipe(speaker)
-            .on('finish', resolve)
-            .on('error', reject);
-    });
+    try {
+        return new Promise((resolve, reject) => {
+            // Convert MP3 to PCM using FFmpeg and stream to Speaker
+            ffmpeg(audioStream)
+                .outputFormat('s16le')
+                .audioChannels(2)
+                .audioFrequency(48000)
+                .on('error', (err) => {
+                    console.error('FFmpeg error:', err);
+                    reject(err);
+                })
+                .pipe(speaker)
+                .on('finish', resolve)
+                .on('error', reject);
+        });
+    } catch (error) {
+        console.log("Error while playing sound, retrying...");
+        return createAudioStreamAndSpeaker(audioStream);
+    }
 }
 
 

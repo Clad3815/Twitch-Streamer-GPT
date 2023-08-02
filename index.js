@@ -14,10 +14,8 @@ const voiceHandler = require("./voiceHandler.js");
 const readline = require('readline');
 const { GPTTokens } = require("gpt-tokens");
 const VAD = require('node-vad');
+
 const vad = new VAD(VAD.Mode.NORMAL);
-
-
-// Load environment variables
 dotenv.config();
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -25,7 +23,6 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 let porcupineHandle;
-// Set up constants
 const AIModel = process.env.OPENAI_MODEL;
 const botUsername = process.env.TWITCH_BOT_USERNAME;
 const clientId = process.env.TWITCH_BOT_CLIEND_ID;
@@ -37,24 +34,26 @@ const broadcasterClientId = process.env.TWITCH_BROADCASTER_CLIEND_ID;
 const broadcasterAccessToken = process.env.TWITCH_BROADCASTER_ACCESS_TOKEN;
 
 const redemptionTrigger = process.env.TWITCH_POINT_REDEMPTIONS_TRIGGER;
+
+const USE_NODE_VAD = process.env.USE_NODE_VAD === '1';
+
 const giftCounts = new Map();
 
 
 
-const MAX_TOKENS = { // Define the maximum tokens for each model
+const MAX_TOKENS = {
     'gpt-3.5-turbo': 4096,
     'gpt-3.5-turbo-16k': 16384,
     'gpt-4': 8192,
     'gpt-4-32k': 32768
 };
 
-// Initialize OpenAI API
 const openai = new OpenAIApi(new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
     basePath: process.env.OPENAI_BASEPATH,
 }))
 
-// Initialize Twitch API and PubSub clients
+
 const authProvider = new StaticAuthProvider(clientId, accessToken);
 const apiClient = new ApiClient({ authProvider });
 
@@ -63,7 +62,6 @@ const broadcasterApiClient = new ApiClient({ authProvider: broadcasterAuthProvid
 const pubSubClient = new PubSubClient({ authProvider: broadcasterAuthProvider });
 
 
-// Initialize variables
 let history = [];
 let streamInfos = {
     "gameName": "Just Chatting",
@@ -77,7 +75,7 @@ let voiceData = null;
 
 let MICROPHONE_DEVICE = -1;
 const CONFIG_FILE = './config.json';
-
+let SILENCE_THRESHOLD;
 const MAX_SILENCE_FRAMES = 96;
 
 let recorder;
@@ -85,6 +83,47 @@ let recordingFrames = [];
 let isRecording = false;
 
 let showChooseMic = true;
+
+
+
+
+function pressAnyKeyToContinue() {
+    return new Promise((resolve) => {
+        console.log("Please turn on microphone. Press any key to start 5 seconds of silence for calibration...");
+
+        readline.emitKeypressEvents(process.stdin);
+        process.stdin.setRawMode(true);
+        process.stdin.once('keypress', (str, key) => {
+            process.stdin.setRawMode(false);
+            resolve();
+        });
+    });
+}
+
+async function calibrate() {
+    console.log("Calibrating...");
+
+    let framesArray = [];
+    let calibrationDuration = 5000; // calibrate for 5 seconds
+    let startTime = Date.now();
+
+    while (Date.now() - startTime < calibrationDuration) {
+        const frames = await recorder.read();
+        framesArray.push(...frames);
+    }
+
+    let sum = framesArray.reduce((a, b) => a + Math.abs(b), 0);
+    let average = sum / framesArray.length;
+
+    // Set SILENCE_THRESHOLD to be some percentage (e.g. 150%) above average
+    SILENCE_THRESHOLD = average * 1.5;
+
+    console.log(`Calibration completed. SILENCE_THRESHOLD set to ${SILENCE_THRESHOLD}`);
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ 
+        MICROPHONE_DEVICE,
+        SILENCE_THRESHOLD
+     }));
+}
 
 
 function loadWakeWord() {
@@ -105,15 +144,11 @@ function loadWakeWord() {
 }
 
 function saveRecording() {
-    // Create wave file using the 'wavefile' module
     let waveFile = new WaveFile();
-
-    // Delete the recording file if it already exists
     if (fs.existsSync("recording.wav")) {
         fs.unlinkSync("recording.wav");
     }
 
-    // Convert the recordingFrames to Int16Array
     const audioData = new Int16Array(recordingFrames.length * porcupineHandle.frameLength);
     for (let i = 0; i < recordingFrames.length; i++) {
         audioData.set(recordingFrames[i], i * porcupineHandle.frameLength);
@@ -133,29 +168,51 @@ async function transcriptRecording() {
     return result;
 }
 
-
 async function startListening() {
     console.log("Start listening");
     let silenceFramesCount = 0;
 
     while (1) {
         const frames = await recorder.read();
-        const framesBuffer = Buffer.from(frames);
 
         if (isRecording) {
+            const framesBuffer = Buffer.from(frames);
             recordingFrames.push(frames);
-            // Check for silence using node-vad
-            const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
-            switch (res) {
-                case VAD.Event.ERROR:
-                    console.log("VAD error");
-                    break;
-                case VAD.Event.NOISE:
-                    // Not silence
-                    silenceFramesCount = 0;
-                    break;
-                case VAD.Event.SILENCE:
-                    // Silence detected
+
+            if (USE_NODE_VAD) {
+                // Use node-vad
+                const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
+                switch (res) {
+                    case VAD.Event.ERROR:
+                        console.log("VAD error");
+                        break;
+                    case VAD.Event.NOISE:
+                        // Not silence
+                        silenceFramesCount = 0;
+                        break;
+                    case VAD.Event.SILENCE:
+                        // Silence detected
+                        silenceFramesCount++;
+                        if (silenceFramesCount > MAX_SILENCE_FRAMES) {
+                            isRecording = false;
+                            silenceFramesCount = 0;
+                            saveRecording();
+                            const result = await transcriptRecording();
+
+                            console.log("Play random wait mp3");
+                            readRandomWaitMP3();
+                            answerToMessage(channelName, result);
+                        }
+                        break;
+                    case VAD.Event.VOICE:
+                        // Voice detected
+                        silenceFramesCount = 0;
+                        break;
+                }
+            } else {
+                // Use SILENCE_THRESHOLD
+                let isSilence = frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;
+                if (isSilence) {
                     silenceFramesCount++;
                     if (silenceFramesCount > MAX_SILENCE_FRAMES) {
                         isRecording = false;
@@ -167,11 +224,9 @@ async function startListening() {
                         readRandomWaitMP3();
                         answerToMessage(channelName, result);
                     }
-                    break;
-                case VAD.Event.VOICE:
-                    // Voice detected
+                } else {
                     silenceFramesCount = 0;
-                    break;
+                }
             }
         } else {
             const index = porcupineHandle.process(frames);
@@ -196,7 +251,6 @@ async function startListening() {
 //     }),
 // ];
 
-// Set up Twitch bot
 const bot = new Bot({
     authProvider,
     channels: [channelName],
@@ -206,7 +260,6 @@ const bot = new Bot({
 console.log("Bot started and listening to channel " + channelName);
 
 
-// Set up Twitch bot events
 if (process.env.ENABLE_TWITCH_ONSUB === '1') {
     bot.onSub(({ broadcasterName, userName }) => {
         answerToMessage(userName, "Vient de s'abonner à la chaine !", 'onSub');
@@ -219,7 +272,6 @@ if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     });
 }
 
-// The same checks are applied to the other event handlers.
 if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
     bot.onSubGift(({ broadcasterName, gifterName, userName }) => {
         const previousGiftCount = giftCounts.get(gifterName) ?? 0;
@@ -312,14 +364,13 @@ function getCleanedMessagesForModel(messages, model) {
         maxTokensForModel = MAX_TOKENS[model];
     }
 
-    maxTokensForModel = maxTokensForModel - process.env.OPENAI_MAX_TOKENS_ANSWER; // Leave the tokens for the response
-    let totalTokens = calculateGPTTokens([messages[0]], model); // Start with tokens of system message
-    let cleanedMessages = [messages[0]]; // Start with system message
+    maxTokensForModel = maxTokensForModel - process.env.OPENAI_MAX_TOKENS_ANSWER;
+    let totalTokens = calculateGPTTokens([messages[0]], model); 
+    let cleanedMessages = [messages[0]]; 
 
     let tokensRemoved = 0;
     let messagesRemoved = 0;
 
-    // Start from the second element on
     for (let i = 1; i < messages.length; i++) { 
         const message = messages[i];
         const messageTokens = calculateGPTTokens([message], model);
@@ -351,7 +402,7 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
 
     history.push({
         "role": "user",
-        "content": JSON.stringify({ "user": "@" + messageUserName, "message": message })
+        "content": JSON.stringify({ "user": messageUserName, "message": message })
     });
     // console.log(systemPrompt);
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
@@ -435,7 +486,7 @@ async function main() {
     if (process.env.ENABLE_TWITCH_ONBITS === '1') {
         pubSubClient.onBits(user.id, async (message) => {
             console.log(`${message.userName} just cheered ${message.bits} bits!`);
-            const answerMessage = await answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits !", 'onBits');
+            const answerMessage = await answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits (Total envoyé depuis le début de la chaine par le viewer: `"+message.totalBits+"`) avec le message `"+message.message+"`", 'onBits');
             bot.say(channelName, answerMessage);
         });
     }
@@ -470,7 +521,8 @@ async function main() {
 function saveMicrophoneInput(deviceId) {
     MICROPHONE_DEVICE = deviceId;
     const config = {
-        MICROPHONE_DEVICE
+        MICROPHONE_DEVICE,
+        SILENCE_THRESHOLD
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config));
     console.log(`Microphone input saved: ${deviceId}`);
@@ -481,7 +533,9 @@ function readConfig() {
         const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
         if (config.MICROPHONE_DEVICE) {
             MICROPHONE_DEVICE = config.MICROPHONE_DEVICE;
-            console.log(`Microphone input loaded: ${MICROPHONE_DEVICE}`);
+        }
+        if (config.SILENCE_THRESHOLD) {
+            SILENCE_THRESHOLD = config.SILENCE_THRESHOLD;
         }
     }
 }
@@ -497,7 +551,20 @@ function initMicrophone() {
     console.log(`Using speaker device: ${process.env.SPEAKER_DEVICE} | Wrong device? Run \`npm run choose-speaker\` to select the correct output.`);
 
     recorder.start();
-    startListening();
+    if (USE_NODE_VAD) {
+        startListening();
+    } else {
+        let force = false;
+        if (process.argv.includes('--calibrate')) {
+            force = true;
+        }
+        if (!force && SILENCE_THRESHOLD) {
+            console.log(`Configuration loaded. SILENCE_THRESHOLD is ${SILENCE_THRESHOLD} | Run \`npm run calibrate\` to recalibrate.`);
+            startListening();
+        } else {
+            pressAnyKeyToContinue().then(calibrate).then(startListening);
+        }
+    }
 }
 
 
