@@ -13,6 +13,7 @@ const { WaveFile } = require('wavefile');
 const voiceHandler = require("./voiceHandler.js");
 const readline = require('readline');
 const { GPTTokens } = require("gpt-tokens");
+dotenv.config();
 
 let VAD, vad;
 const USE_NODE_VAD = process.env.USE_NODE_VAD === '1';
@@ -21,7 +22,6 @@ if (USE_NODE_VAD) {
     VAD = require('node-vad');
     vad = new VAD(VAD.Mode.NORMAL);
 }
-dotenv.config();
 
 process.on('unhandledRejection', (reason, promise) => {
     console.log('Unhandled Rejection at:', promise, 'reason:', reason);
