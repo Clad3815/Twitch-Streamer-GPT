@@ -69,12 +69,13 @@ Embarquez dans cette aventure passionnante en quelques étapes simples :
     ```bash
     npm install
     ```
+    Ou lancez le script `install.bat` pour installer les dépendances.
 
 5. Démarrez le script (en arrière-plan)
     ```bash
-    npm start
+    node index.js
     ```
-    Vous pouvez également démarrer le script uniquement dans la console (il sera fermé lorsque la console est fermée) en exécutant `node index.js` à la place.
+    Ou lancez le script `start.bat` pour démarrer le script.
 
 
 Voilà ! Votre propre script d'animation est en marche ! Préparez-vous maintenant à amplifier le plaisir et l'interactivité de vos streams Twitch.
