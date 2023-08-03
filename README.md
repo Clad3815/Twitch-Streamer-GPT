@@ -52,7 +52,7 @@ Hop on this exciting journey with a few simple steps:
     ```bash
     git clone https://github.com/Clad3815/Twitch-Streamer-GPT.git
     ```
-    Not comfortable with cloning? No worries! Download the zip version of the repository and extract it at a suitable location. This is an easier alternative for our non-technical audience.
+    Not comfortable with cloning? No worries! [Download the zip version of the repository](https://github.com/Clad3815/Twitch-Streamer-GPT/archive/refs/heads/main.zip) and extract it at a suitable location. This is an easier alternative for our non-technical audience.
 
 3. Navigate to the repository directory:
     ```bash
