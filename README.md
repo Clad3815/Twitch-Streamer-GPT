@@ -1,3 +1,6 @@
+
+[Version française](README_FR.md)
+
 # Twitch Streamer GPT - Reinventing Twitch Streams
 
 Bring a new level of engagement and enjoyability to your Twitch streams with our innovative Twitch Streamer GPT application. This NodeJS-based solution integrates advanced technology, including OpenAI, Twurple, Easy-Bot, and more, to create a more interactive and enjoyable viewing experience for your Twitch audience.
