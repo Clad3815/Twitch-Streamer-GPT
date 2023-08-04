@@ -5,7 +5,7 @@ const ffmpegStatic = require('ffmpeg-static');
 const Speaker = require('speaker');
 const stream = require('stream');
 const googleTTS = require('google-tts-api');
-const voice = require("elevenlabs-node");
+const axios = require('axios');
 
 const { spawn } = require('child_process');
 
@@ -13,30 +13,73 @@ const { spawn } = require('child_process');
 // Configure ffmpeg
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
-// Function to generate ElevenLabs TTS
+
+
 async function generateElevenLabsTTS(text) {
-    // Get the audio stream
-    let audioStream = null;
-    let model = 'eleven_multilingual_v1';
-    if (process.env.ELEVENLABS_VOICE_MODEL) {
-        model = process.env.ELEVENLABS_VOICE_MODEL;
-    }
+    const voiceId = process.env.ELEVENLABS_VOICEID;
+    const apiKey = process.env.ELEVENLABS_APIKEY;
+    const voiceStability = process.env.ELEVENLABS_VOICE_STABILITY || 0.5;
+    const voiceSimilarityBoost = process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST || 0.5;
+    const model = process.env.ELEVENLABS_VOICE_MODEL || 'eleven_multilingual_v1';
+
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
+    const headers = {
+        'accept': 'audio/mpeg',
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json'
+    };
+    const data = {
+        text,
+        model_id: model,
+        voice_settings: {
+            stability: voiceStability,
+            similarity_boost: voiceSimilarityBoost
+        }
+    };
+
     try {
-        audioStream = await voice.textToSpeechStream(process.env.ELEVENLABS_APIKEY, process.env.ELEVENLABS_VOICEID, text, process.env.ELEVENLABS_VOICE_STABILITY, process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST, model);
+        const response = await axios.post(url, data, {
+            responseType: 'stream',
+            headers
+        });
+
+        if (response.status === 401) {
+            console.error("Unauthorized: Not enough credits or invalid API key.");
+            // You can throw an error or handle it as needed
+            throw new Error("Unauthorized");
+        }
+
         console.log("Got the audio stream, playing it");
         // Convert MP3 to PCM using FFmpeg and stream to Speaker
-        return createAudioStreamAndSpeaker(audioStream);
+        return createAudioStreamAndSpeaker(response.data);
     } catch (error) {
+        if (error.response && error.response.status === 401) {
+            console.log("Unauthorized: Not enough credits or invalid API key.");
+            // You can handle this specific case as needed, e.g., by notifying the user
+            return;
+        }
+
         console.log("Error while generating TTS with ElevenLabs API, retrying...");
         return generateElevenLabsTTS(text);
     }
 }
 
+
 // Function to get voices from ElevenLabs
 async function getElevenLabsVoices() {
     let voices = null;
     try {
-        voices = await voice.getVoices(process.env.ELEVENLABS_APIKEY);
+        let voicesUrl = `https://api.elevenlabs.io/v1/voices`;
+        const apiKey = process.env.ELEVENLABS_APIKEY;
+        const headers = {
+            'accept': 'application/json',
+            'xi-api-key': apiKey,
+            'Content-Type': 'application/json'
+        };
+        const response = await axios.get(voicesUrl, {
+            headers
+        });
+        voices = response.data;
     } catch (error) {
         console.log("Error while getting voices with ElevenLabs API, retrying...");
     }
@@ -64,6 +107,7 @@ async function streamMP3FromGoogleTTS(text, lang = 'fr') {
 
 // Function to create audio stream and speaker (common function used in several places)
 async function createAudioStreamAndSpeaker(audioStream) {
+
     // Create a speaker instance
     const speaker = new Speaker({
         channels: 2,
@@ -71,11 +115,16 @@ async function createAudioStreamAndSpeaker(audioStream) {
         sampleRate: 48000,
         device: process.env.SPEAKER_DEVICE
     });
+
+    // speaker.on('open', () => console.log('Speaker stream opened.'));
+    // speaker.on('close', () => console.log('Speaker stream closed.'));
+    // speaker.on('flush', () => console.log('Speaker stream flushed.'));
+    speaker.on('error', (err) => console.log('Speaker stream error:', err));
     try {
         return new Promise((resolve, reject) => {
             // Convert MP3 to PCM using FFmpeg and stream to Speaker
             ffmpeg(audioStream)
-                .outputFormat('s16le')
+                .format('s16le')
                 .audioChannels(2)
                 .audioFrequency(48000)
                 .on('error', (err) => {
@@ -94,8 +143,7 @@ async function createAudioStreamAndSpeaker(audioStream) {
 
 
 async function streamMP3FromFile(filePath) {
-    // Create a readable stream from the file
-    const audioStream = fs.createReadStream(filePath);
+
 
     // Create a speaker instance
     const speaker = new Speaker({
@@ -105,9 +153,20 @@ async function streamMP3FromFile(filePath) {
         device: process.env.SPEAKER_DEVICE
     });
 
+    // speaker.on('open', () => console.log('Speaker stream opened.'));
+    // speaker.on('close', () => console.log('Speaker stream closed.'));
+    // speaker.on('flush', () => console.log('Speaker stream flushed.'));
+    speaker.on('error', (err) => console.log('Speaker stream error:', err));
+
+    // Create a readable stream from the file
+
+    const audioStream = fs.createReadStream(filePath);
+
+    // Create a Promise to handle the streaming process
     return new Promise((resolve, reject) => {
         // Convert MP3 to PCM using FFmpeg and stream to Speaker
         ffmpeg(audioStream)
+            .inputFormat('mp3')
             .outputFormat('s16le')
             .audioChannels(2)
             .audioFrequency(48000)
@@ -115,13 +174,11 @@ async function streamMP3FromFile(filePath) {
                 console.error('FFmpeg error:', err);
                 reject(err);
             })
-            .pipe(speaker)
+            .pipe(speaker, { end: true })
             .on('finish', resolve)
             .on('error', reject);
     });
 }
-
-
 
 function listSoundDevices() {
     return new Promise((resolve, reject) => {
