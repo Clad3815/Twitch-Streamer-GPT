@@ -23,6 +23,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "google-tts-api": "^2.0.2",
     "gpt-tokens": "^1.1.2",
+    "jsonrepair": "^3.2.0",
     "openai": "^3.3.0",
     "speaker": "^0.5.4",
     "wavefile": "^11.0.0"

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const { Bot, createBotCommand } = require('@twurple/easy-bot');
+const { Bot } = require('@twurple/easy-bot');
 const { StaticAuthProvider } = require('@twurple/auth');
 const { PubSubClient } = require('@twurple/pubsub');
 const { ApiClient } = require('@twurple/api');
@@ -13,6 +13,10 @@ const { WaveFile } = require('wavefile');
 const voiceHandler = require("./voiceHandler.js");
 const readline = require('readline');
 const { GPTTokens } = require("gpt-tokens");
+const { jsonrepair } = require('jsonrepair');
+
+const { createBotFunctions } = require("./botFunctions.js");
+
 dotenv.config();
 
 let VAD, vad;
@@ -39,6 +43,8 @@ const broadcasterClientId = process.env.TWITCH_BROADCASTER_CLIEND_ID;
 const broadcasterAccessToken = process.env.TWITCH_BROADCASTER_ACCESS_TOKEN;
 
 const redemptionTrigger = process.env.TWITCH_POINT_REDEMPTIONS_TRIGGER;
+
+let broadcasterId;
 
 
 const giftCounts = new Map();
@@ -68,7 +74,7 @@ const pubSubClient = new PubSubClient({ authProvider: broadcasterAuthProvider })
 
 let history = [];
 let streamInfos = {
-    "gameName": "Just Chatting",
+    "gameName": "",
     "title": "Stream not started",
     "viewers": 0,
     "followers": 0,
@@ -89,7 +95,7 @@ let isRecording = false;
 let showChooseMic = true;
 
 
-
+let botFunctions;
 
 function pressAnyKeyToContinue() {
     return new Promise((resolve) => {
@@ -129,6 +135,17 @@ async function calibrate() {
      }));
 }
 
+async function analyseMessage(text) {
+    // Vérifier le message en utilisant l'API de modération d'OpenAI
+    const response = await openai.createModeration({
+        input: text,
+    });
+    if (response.data.results[0].flagged) {
+        console.log("Message flagged as inappropriate");
+        return false;
+    }
+    return true;
+}
 
 function loadWakeWord() {
     const directoryPath = path.resolve(__dirname, 'wake_word');
@@ -205,6 +222,7 @@ async function startListening() {
 
                             console.log("Play random wait mp3");
                             readRandomWaitMP3();
+                            console.log("Sending message to OpenAI API");
                             answerToMessage(channelName, result);
                         }
                         break;
@@ -226,6 +244,7 @@ async function startListening() {
 
                         console.log("Play random wait mp3");
                         readRandomWaitMP3();
+                        console.log("Sending message to OpenAI API");
                         answerToMessage(channelName, result);
                     }
                 } else {
@@ -244,21 +263,10 @@ async function startListening() {
     }
 }
 
-// // Set up bot commands
-// const botCommands = [
-//     createBotCommand('ask', async (params, { userName, reply }) => {
-//         const question = params.join(' ');
-//         await voiceHandler.streamMP3FromGoogleTTS(`Message de ${userName}: ${question}`, 'fr-FR');
-//         answerToMessage(userName, question).then((answer) => {
-//             reply(answer);
-//         });
-//     }),
-// ];
 
 const bot = new Bot({
     authProvider,
     channels: [channelName],
-    // commands: botCommands
 });
 
 console.log("Bot started and listening to channel " + channelName);
@@ -266,12 +274,14 @@ console.log("Bot started and listening to channel " + channelName);
 
 if (process.env.ENABLE_TWITCH_ONSUB === '1') {
     bot.onSub(({ broadcasterName, userName }) => {
+        console.log("Sending message to OpenAI API");
         answerToMessage(userName, "Vient de s'abonner à la chaine !", 'onSub');
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     bot.onResub(({ broadcasterName, userName, months }) => {
+        console.log("Sending message to OpenAI API");
         answerToMessage(userName, "Vient de se réabonner à la chaine pour un total de " + months + " mois !", 'onResub');
     });
 }
@@ -282,6 +292,7 @@ if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
         if (previousGiftCount > 0) {
             giftCounts.set(gifterName, previousGiftCount - 1);
         } else {
+            console.log("Sending message to OpenAI API");
             answerToMessage(userName, "Vient de recevoir un abonnement cadeau de la part de " + gifterName + " !", 'onSubGift');
         }
     });
@@ -291,18 +302,21 @@ if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
     bot.onCommunitySub(({ broadcasterName, gifterName, count }) => {
         const previousGiftCount = giftCounts.get(gifterName) ?? 0;
         giftCounts.set(gifterName, previousGiftCount + count);
+        console.log("Sending message to OpenAI API");
         answerToMessage(gifterName, "Vient d'offrir " + count + " abonnements à la communauté !", 'onCommunitySub');
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONPRIMEPAIDUPGRADE === '1') {
     bot.onPrimePaidUpgrade(({ broadcasterName, userName }) => {
+        console.log("Sending message to OpenAI API");
         answerToMessage(userName, "Vient de passer d'un abonnement Amazon Prime à un abonnement Tier 1 !", 'onPrimePaidUpgrade');
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
     bot.onGiftPaidUpgrade(({ broadcasterName, userName, gifterDisplayName }) => {
+        console.log("Sending message to OpenAI API");
         answerToMessage(userName, "Vient de passer d'un abonnement cadeau offert par " + gifterDisplayName + " à un abonnement Tier 1 !", 'onGiftPaidUpgrade');
     });
 }
@@ -377,44 +391,103 @@ function getCleanedMessagesForModel(messages, model) {
 
     for (let i = 1; i < messages.length; i++) { 
         const message = messages[i];
-        const messageTokens = calculateGPTTokens([message], model);
-
-        if (totalTokens + messageTokens > maxTokensForModel) {
-            tokensRemoved += messageTokens;
-            messagesRemoved += 1;
-            continue;
+        try {
+            const messageTokens = calculateGPTTokens([message], model);
+    
+            if (totalTokens + messageTokens > maxTokensForModel) {
+                tokensRemoved += messageTokens;
+                messagesRemoved += 1;
+                continue;
+            }
+    
+            // Add the message to the end of the cleaned messages
+            cleanedMessages.push(message); // instead of unshift()
+    
+            // Add the tokens to the total
+            totalTokens += messageTokens;
+        } catch (error) {
+            cleanedMessages.push(message); // instead of unshift()
         }
-
-        // Add the message to the end of the cleaned messages
-        cleanedMessages.push(message); // instead of unshift()
-
-        // Add the tokens to the total
-        totalTokens += messageTokens;
     }
 
     return cleanedMessages;
 }
 
-// Functions
-async function answerToMessage(messageUserName, message, goal = 'answerToMessage') {
-    let systemPrompt = generatePromptFromGoal(goal);
 
-    // console.log(systemPrompt);
+
+// Functions
+async function handleFunctionCall(functionCall, userName) {
+    // Finding the corresponding function from botFunctions
+    const botFunction = botFunctions.find(f => f.gptFunction.name === functionCall.name);
+    // If the function is found, call it with the provided arguments
+    if (botFunction) {
+        let { name, arguments: args } = functionCall;
+        let argsFixed;
+        try {
+            argsFixed = JSON.parse(args);
+        } catch (e) {
+            try {
+                argsFixed = JSON.parse(jsonrepair(args));
+            } catch (e) {
+                argsFixed = args;
+            }
+        }
+
+
+        try {
+            const result = await botFunction.function_to_call(argsFixed);
+            // Returning the successful result in the required format
+            return {
+                role: 'function',
+                name: functionCall.name,
+                content: result
+            };
+        } catch (error) {
+            console.error(`Error executing ${functionCall.name}:`, error);
+            // Returning the error result in the required format
+            return {
+                role: 'function',
+                name: functionCall.name,
+                content: 'Error executing function'
+            };
+        }
+    } else {
+        console.warn(`Function ${functionCall.name} not found.`);
+        // Returning a not found result in the required format
+        return {
+            role: 'function',
+            name: functionCall.name,
+            content: 'Function not found'
+        };
+    }
+}
+
+
+
+async function answerToMessage(messageUserName, message, goal = 'answerToMessage', isFunctionCall = false) {
+    let systemPrompt = generatePromptFromGoal(goal);
+    let canUseFunctions = false;
     if (messageUserName == channelName) {
         messageUserName += " (the streamer)";
+        canUseFunctions = true;
     }
-
-    history.push({
-        "role": "user",
-        "content": JSON.stringify({ "user": messageUserName, "message": message })
-    });
-    // console.log(systemPrompt);
+    if (!isFunctionCall) {
+        history.push({
+            "role": "user",
+            "content": JSON.stringify({ "user": messageUserName, "message": message })
+        });
+    }
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
-    console.log("Sending message to OpenAI API");
 
     let retries = 0;
     let retriesMax = 3;
     let result = null;
+
+    let functions = botFunctions.map((botFunction) => {
+        return botFunction.gptFunction;
+    }).filter((gptFunction) => {
+        return canUseFunctions || !gptFunction.onlyBroadcaster;
+    });
 
     while (result == null && retries < retriesMax) {
         try {
@@ -423,6 +496,8 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
                 messages: getCleanedMessagesForModel(gptMessages, AIModel),
                 temperature: parseFloat(process.env.OPENAI_MODEL_TEMP),
                 max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER),
+                function_call: functions ? "auto" : "none",
+                functions: functions,
             });
         } catch (error) {
             console.log("Error while sending message to OpenAI API");
@@ -433,21 +508,29 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
     if (result == null) {
         throw new Error("Error while sending message to OpenAI API");
     }
-
-    console.log("Message received from OpenAI API");
-
-    const textAnswer = result.data.choices[0]['message']['content'];
-    history.push({
-        "role": "assistant",
-        "content": textAnswer
-    });
-
-    console.log("Generating TTS of the message with ElevenLabs API");
-    try {
-        await voiceHandler.generateElevenLabsTTS(textAnswer);
-    } catch (error) {
-        console.log("Error while generating TTS with ElevenLabs API");
+    let gptAnswer = result.data.choices[0].message;
+    history.push(gptAnswer);
+    const textAnswer = gptAnswer['content'];
+    if (textAnswer) {
+        console.log("Message received from OpenAI API");
+        console.log(textAnswer);
+        console.log("Generating TTS of the message with ElevenLabs API");
+        try {
+            if (gptAnswer.function_call) {
+                voiceHandler.generateElevenLabsTTS(textAnswer);
+            } else { 
+                await voiceHandler.generateElevenLabsTTS(textAnswer);
+            }
+        } catch (error) {
+            console.log("Error while generating TTS with ElevenLabs API");
+        }
     }
+    if (gptAnswer.function_call) {
+        const functionCall = await handleFunctionCall(gptAnswer.function_call, messageUserName);
+        history.push(functionCall);
+        return await answerToMessage(messageUserName, message, goal, true);
+    }
+
     return textAnswer;
 }
 
@@ -470,6 +553,9 @@ async function main() {
     const user = await apiClient.users.getUserByName(channelName);
     const userFollowers = await user.getChannelFollowers();
 
+    broadcasterId = user.id;
+    botFunctions = createBotFunctions(broadcasterApiClient, broadcasterId);
+
     streamInfos.followers = userFollowers.total;
     streamInfos.description = user.description;
 
@@ -478,10 +564,18 @@ async function main() {
             console.log(`${message.userDisplayName} just redeemed ${message.rewardTitle}!`);
             if (redemptionTrigger == message.rewardTitle) {
                 console.log(`Message: ${message.message}`);
+                if (!await analyseMessage(message.message)) {
+                    bot.say(channelName, "Désolé, mais nous n'acceptons pas ce genre de langage ici. Essayons de garder le chat respectueux et amusant pour tout le monde !");
+                    return;
+                }
                 console.log("Generating TTS of the message");
                 await voiceHandler.streamMP3FromGoogleTTS(`Message de ${message.userDisplayName}: ${message.message}`);
+                await new Promise(r => setTimeout(r, 1000));
                 console.log("Play random wait mp3");
-                readRandomWaitMP3();
+                readRandomWaitMP3().catch(error => {
+                    console.error("Error while reading random wait MP3:", error);
+                });
+                console.log("Sending message to OpenAI API");
                 const answerMessage = await answerToMessage(message.userDisplayName, message.message);
                 bot.say(channelName, answerMessage);
             }
@@ -490,6 +584,7 @@ async function main() {
     if (process.env.ENABLE_TWITCH_ONBITS === '1') {
         pubSubClient.onBits(user.id, async (message) => {
             console.log(`${message.userName} just cheered ${message.bits} bits!`);
+            console.log("Sending message to OpenAI API");
             const answerMessage = await answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits (Total envoyé depuis le début de la chaine par le viewer: `"+message.totalBits+"`) avec le message `"+message.message+"`", 'onBits');
             bot.say(channelName, answerMessage);
         });

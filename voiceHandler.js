@@ -132,8 +132,7 @@ async function createAudioStreamAndSpeaker(audioStream) {
                     reject(err);
                 })
                 .pipe(speaker)
-                .on('finish', resolve)
-                .on('error', reject);
+                .on('finish', resolve);
         });
     } catch (error) {
         console.log("Error while playing sound, retrying...");
@@ -175,8 +174,7 @@ async function streamMP3FromFile(filePath) {
                 reject(err);
             })
             .pipe(speaker, { end: true })
-            .on('finish', resolve)
-            .on('error', reject);
+            .on('finish', resolve);
     });
 }
 
