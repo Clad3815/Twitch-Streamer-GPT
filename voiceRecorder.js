@@ -39,7 +39,7 @@ if (enableDebug) {
 
 let MICROPHONE_DEVICE = -1;
 const CONFIG_FILE = './config.json';
-let SILENCE_THRESHOLD;
+let SILENCE_THRESHOLD = -1;
 const MAX_SILENCE_FRAMES = 48;
 
 let recorder;
@@ -258,7 +258,7 @@ function initMicrophone() {
         if (process.argv.includes('--calibrate')) {
             force = true;
         }
-        if (!force && SILENCE_THRESHOLD) {
+        if (!force && SILENCE_THRESHOLD >= 0) {
             console.log(`Configuration loaded. SILENCE_THRESHOLD is ${SILENCE_THRESHOLD} | Run \`npm run calibrate\` to recalibrate.`);
             startListening();
         } else {
@@ -285,8 +285,13 @@ async function chooseMicrophone() {
         showChooseMic = false;
         saveMicrophoneInput(parseInt(deviceId));
         
-        recorder = new PvRecorder(porcupineHandle.frameLength, MICROPHONE_DEVICE);
-        initMicrophone();
+        // Exit the process and ask the user to restart the script
+        console.log('Please restart the script to use the new microphone input');
+        process.exit(0);
+
+
+        // recorder = new PvRecorder(porcupineHandle.frameLength, MICROPHONE_DEVICE);
+        // initMicrophone();
     });
 }
 
