@@ -288,9 +288,22 @@ function calculateGPTTokens(messages, model) {
     for (let i = 0; i < messages.length; i++) {
         num_tokens += tokens_per_message;
 
+        // Handle content, if not null
+        if (messages[i].content !== null) {
+            num_tokens += encoding.encode(messages[i].content).length;
+        }
+
+        // Handle function_call, if present
+        if (messages[i].function_call) {
+            num_tokens += encoding.encode(JSON.stringify(messages[i].function_call)).length;
+        }
+
+        // Add tokens for other keys
         for (let key in messages[i]) {
-            num_tokens += encoding.encode(messages[i][key]).length;
-            if (key === 'name') { num_tokens += tokens_per_name }
+            if (key !== 'content' && key !== 'function_call') {
+                num_tokens += encoding.encode(messages[i][key]).length;
+                if (key === 'name') { num_tokens += tokens_per_name }
+            }
         }
     }
 
@@ -298,41 +311,60 @@ function calculateGPTTokens(messages, model) {
 }
 
 function getCleanedMessagesForModel(messages, model) {
-    let maxTokensForModel = process.env.OPENAI_MAX_TOKENS_TOTAL;
-
-    if (maxTokensForModel == 0) {
-        maxTokensForModel = MAX_TOKENS[model];
-    }
-
-    maxTokensForModel = maxTokensForModel - process.env.OPENAI_MAX_TOKENS_ANSWER;
-    let totalTokens = calculateGPTTokens([messages[0]], model); 
-    let cleanedMessages = [messages[0]]; 
-
-    let tokensRemoved = 0;
-    let messagesRemoved = 0;
-
-    for (let i = 1; i < messages.length; i++) { 
-        const message = messages[i];
-        try {
-            const messageTokens = calculateGPTTokens([message], model);
+    let autoSwitch = process.env.AUTO_USE_SMALL_MODEL === '1'; // Assuming it's a string 'true' or 'false'
     
-            if (totalTokens + messageTokens > maxTokensForModel) {
-                tokensRemoved += messageTokens;
-                messagesRemoved += 1;
-                continue;
-            }
+    let maxTokensForModel = parseInt(process.env.OPENAI_MAX_TOKENS_TOTAL, 10) || MAX_TOKENS[model];
+    maxTokensForModel -= parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER, 10);
+    // Keep a margin of 5% of the max tokens for the model
+    maxTokensForModel = Math.floor(maxTokensForModel * 0.95);
     
-            // Add the message to the end of the cleaned messages
-            cleanedMessages.push(message); // instead of unshift()
+    console.log(`Max Tokens for Model: ${maxTokensForModel}`);
     
-            // Add the tokens to the total
-            totalTokens += messageTokens;
-        } catch (error) {
-            cleanedMessages.push(message); // instead of unshift()
+    let totalTokens = calculateGPTTokens(messages, model);
+
+    // If tokens exceed and auto-switching is enabled, choose the next best model
+    if (totalTokens > maxTokensForModel && autoSwitch) {
+        switch (model) {
+            case 'gpt-3.5-turbo-16k':
+                model = 'gpt-3.5-turbo';
+                break;
+            case 'gpt-4-32k':
+                model = 'gpt-4';
+                break;
+            default:
+                // console.log('No smaller model available or model not recognized.');
+                break;
         }
     }
 
-    return cleanedMessages;
+    // Now, get the cleaned messages for the selected model
+    let cleanedMessages = [];
+    totalTokens = 0;
+    for (let i = messages.length - 1; i >= 0; i--) { 
+        const message = messages[i];
+        try {
+            const messageTokens = calculateGPTTokens([message], model);
+
+            if (totalTokens + messageTokens <= maxTokensForModel) {
+                // Add the message to the beginning of the cleaned messages
+                cleanedMessages.unshift(message);
+    
+                // Add the tokens to the total
+                totalTokens += messageTokens;
+            } else {
+                // console.log(`Message Skipped, Token Limit Reached`);
+                break;
+            }
+        } catch (error) {
+            console.log(`Error processing message: ${error.message}`);
+        }
+    }
+
+    console.log(`Final Total Tokens: ${totalTokens}`);
+    return {
+        messages: cleanedMessages,
+        model: model
+    };
 }
 
 async function speechToText(filePath) {

@@ -119,6 +119,14 @@ function readRandomWaitMP3() {
 
 
 async function main() {
+    // Check OpenAI model availability
+    try {
+        await openaiLib.openai.retrieveModel(process.env.OPENAI_MODEL);
+    } catch (error) {
+        console.log(`The model ${process.env.OPENAI_MODEL} is not available.`);
+        process.exit(1);
+    }
+
     let streamInfos = {};
 
     const user = await apiClient.users.getUserByName(channelName);
