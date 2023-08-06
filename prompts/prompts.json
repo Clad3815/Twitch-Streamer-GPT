@@ -1,0 +1,12 @@
+{
+    "onSub": "Vient de s'abonner à la chaine !",
+    "onResub": "Vient de se réabonner à la chaine pour un total de {months} mois !",
+    "onSubGift": "Vient de recevoir un abonnement cadeau de la part de {gifterName} !",
+    "onCommunitySub": "Vient d'offrir {count} abonnements à la communauté !",
+    "onPrimePaidUpgrade": "Vient de passer d'un abonnement Amazon Prime à un abonnement Tier 1 !",
+    "onGiftPaidUpgrade": "Vient de passer d'un abonnement cadeau offert par {gifterDisplayName} à un abonnement Tier 1 !",
+    "onBits": "Vient de cheer {bits} bits (Total envoyé depuis le début de la chaine par le viewer: {totalBits}) avec le message {message}",
+    "warningMessage": "Désolé, mais nous n'acceptons pas ce genre de langage ici. Essayons de garder le chat respectueux et amusant pour tout le monde !",
+    "ttsMessage": "Message de {userDisplayName}: {message}"
+  }
+  

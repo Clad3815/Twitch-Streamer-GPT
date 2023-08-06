@@ -274,7 +274,9 @@ function getEncodingForModelCached(model) {
         try {
             modelEncodingCache[model] = tiktoken.encodingForModel(model)
         } catch (e) {
-            console.info('Model not found. Using cl100k_base encoding.')
+            if (enableDebug) {
+                console.info('Model not found. Using cl100k_base encoding.')
+            }
             modelEncodingCache[model] = tiktoken.getEncoding('cl100k_base')
         }
     }
@@ -320,8 +322,9 @@ function getCleanedMessagesForModel(messages, model) {
     maxTokensForModel -= parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER, 10);
     // Keep a margin of 10% of the max tokens for the model
     maxTokensForModel = Math.floor(maxTokensForModel * 0.90);
-
-    console.log(`Max Tokens for Model: ${maxTokensForModel}`);
+    if (enableDebug) {
+        console.log(`Max Tokens for Model: ${maxTokensForModel}`);
+    }
 
     let totalTokens = calculateGPTTokens([messages[0]], model); // Add tokens for the system prompt
 
@@ -340,11 +343,15 @@ function getCleanedMessagesForModel(messages, model) {
                 // Add the tokens to the total
                 totalTokens += messageTokens;
             } else {
-                console.log(`Message Skipped, Token Limit Reached`);
+                if (enableDebug) {
+                    console.log(`Message Skipped, Token Limit Reached`);
+                }
                 break;
             }
         } catch (error) {
-            console.log(`Error processing message: ${error.message}`);
+            if (enableDebug) {
+                console.log(`Error processing message: ${error.message}`);
+            }
         }
     }
 
@@ -356,8 +363,9 @@ function getCleanedMessagesForModel(messages, model) {
             model = 'gpt-4';
         }
     }
-
-    console.log(`Final Total Tokens: ${totalTokens}`);
+    if (enableDebug) {
+        console.log(`Final Total Tokens: ${totalTokens}`);
+    }
     return {
         messages: cleanedMessages,
         model: model

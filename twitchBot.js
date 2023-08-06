@@ -15,7 +15,7 @@ const enableDebug = process.env.DEBUG_MODE === '1';
 // Create an Express app
 const app = express();
 app.use(express.json());
-
+const promptsConfig = JSON.parse(fs.readFileSync('./prompts/prompts.json', 'utf-8'));
 
 if (enableDebug) {
     process.on('uncaughtException', (err, origin) => {
@@ -62,14 +62,15 @@ console.log("Bot started and listening to channel " + channelName);
 
 if (process.env.ENABLE_TWITCH_ONSUB === '1') {
     bot.onSub(({ broadcasterName, userName }) => {
-        const message = openaiLib.answerToMessage(userName, "Vient de s'abonner à la chaine !", 'onSub');
+        const message = openaiLib.answerToMessage(userName, promptsConfig.onSub, 'onSub');
         bot.say(channelName, message);
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     bot.onResub(({ broadcasterName, userName, months }) => {
-        const message = openaiLib.answerToMessage(userName, "Vient de se réabonner à la chaine pour un total de " + months + " mois !", 'onResub');
+        const prompt = promptsConfig.onResub.replace('{months}', months);
+        const message = openaiLib.answerToMessage(userName, prompt, 'onResub');
         bot.say(channelName, message);
     });
 }
@@ -80,7 +81,8 @@ if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
         if (previousGiftCount > 0) {
             giftCounts.set(gifterName, previousGiftCount - 1);
         } else {
-            const message = openaiLib.answerToMessage(userName, "Vient de recevoir un abonnement cadeau de la part de " + gifterName + " !", 'onSubGift');
+            const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
+            const message = openaiLib.answerToMessage(userName, prompt, 'onSubGift');
             bot.say(channelName, message);
         }
     });
@@ -88,27 +90,26 @@ if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
     bot.onCommunitySub(({ broadcasterName, gifterName, subInfo }) => {
-        const previousGiftCount = giftCounts.get(gifterName) ?? 0;
-        giftCounts.set(gifterName, previousGiftCount + subInfo.count);
-        const message = openaiLib.answerToMessage(gifterName, "Vient d'offrir " + subInfo.count + " abonnements à la communauté !", 'onCommunitySub');
+        const prompt = promptsConfig.onCommunitySub.replace('{count}', subInfo.count);
+        const message = openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub');
         bot.say(channelName, message);
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONPRIMEPAIDUPGRADE === '1') {
     bot.onPrimePaidUpgrade(({ broadcasterName, userName }) => {
-        const message = openaiLib.answerToMessage(userName, "Vient de passer d'un abonnement Amazon Prime à un abonnement Tier 1 !", 'onPrimePaidUpgrade');
+        const message = openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade');
         bot.say(channelName, message);
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
     bot.onGiftPaidUpgrade(({ broadcasterName, userName, gifterDisplayName }) => {
-        const message = openaiLib.answerToMessage(userName, "Vient de passer d'un abonnement cadeau offert par " + gifterDisplayName + " à un abonnement Tier 1 !", 'onGiftPaidUpgrade');
+        const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
+        const message = openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade');
         bot.say(channelName, message);
     });
 }
-
 
 function readRandomWaitMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wait_mp3'));
@@ -145,11 +146,12 @@ async function main() {
             if (redemptionTrigger == message.rewardTitle) {
                 console.log(`Message: ${message.message}`);
                 if (!await openaiLib.analyseMessage(message.message)) {
-                    bot.say(channelName, "Désolé, mais nous n'acceptons pas ce genre de langage ici. Essayons de garder le chat respectueux et amusant pour tout le monde !");
+                    bot.say(channelName, promptsConfig.warningMessage);
                     return;
                 }
                 console.log("Generating TTS of the message");
-                const audioStream = await voiceHandler.streamMP3FromGoogleTTS(`Message de ${message.userDisplayName}: ${message.message}`);
+                const ttsPrompt = promptsConfig.ttsMessage.replace('{userDisplayName}', message.userDisplayName).replace('{message}', message.message);
+                const audioStream = await voiceHandler.streamMP3FromGoogleTTS(ttsPrompt);
                 await voiceHandler.playBufferingStream(audioStream);
                 await new Promise(r => setTimeout(r, 1000));
                 console.log("Play random wait mp3");
@@ -161,10 +163,13 @@ async function main() {
     }
     if (process.env.ENABLE_TWITCH_ONBITS === '1') {
         pubSubClient.onBits(user.id, async (message) => {
-            console.log(`${message.userName} just cheered ${message.bits} bits!`);
             const minBits = process.env.TWITCH_MIN_BITS ? parseInt(process.env.TWITCH_MIN_BITS) : 0;
             if (message.bits >= minBits) {
-                const answerMessage = await openaiLib.answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits (Total envoyé depuis le début de la chaine par le viewer: `"+message.totalBits+"`) avec le message `"+message.message+"`", 'onBits');
+                const prompt = promptsConfig.onBits
+                  .replace('{bits}', message.bits)
+                  .replace('{totalBits}', message.totalBits)
+                  .replace('{message}', message.message);
+                const answerMessage = await openaiLib.answerToMessage(message.userName, prompt, 'onBits');
                 bot.say(channelName, answerMessage);
             }
         });
