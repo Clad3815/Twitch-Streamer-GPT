@@ -75,17 +75,28 @@ function createFFmpeg(audioStream, speaker) {
     if (enableDebug) {
         addDebugLog('Creating FFmpeg process: ' + ffmpegStatic);
     }
-    const ffmpeg = spawn(ffmpegStatic, [
-        '-i', 'pipe:0',
-        '-f', 's16le',
-        '-acodec', 'pcm_s16le',
-        '-ac', '2',
-        '-ar', '48000',
-        '-loglevel', 'verbose',
-        'pipe:1'
-    ]);
+    let ffmpeg = null;
+    try {
+        ffmpeg = spawn(ffmpegStatic, [
+            '-i', 'pipe:0',
+            '-f', 's16le',
+            '-acodec', 'pcm_s16le',
+            '-ac', '2',
+            '-ar', '48000',
+            '-loglevel', 'verbose',
+            'pipe:1'
+        ], {
+            env: { ...process.env }
+        });
+    } catch (error) {
+        addDebugLog('Error creating FFmpeg process: ' + error);
+        throw error;
+    }
+    // Redirect stderr to debug.log
+    ffmpeg.stderr.on('data', (data) => {
+        addDebugLog(`stderr: ${data}`);
+    });
 
-    
 
     audioStream.pipe(ffmpeg.stdin);
     ffmpeg.stdout.pipe(speaker);
@@ -102,7 +113,7 @@ function handleFFmpegEvents(ffmpeg) {
 
         ffmpeg.on('close', (code, signal) => {
             addDebugLog(`FFmpeg closed with code ${code} and signal ${signal}`);
-            
+
             if (code !== 0) {
                 console.error(`FFmpeg exited with code ${code} and signal ${signal}`);
                 reject(new Error(`FFmpeg exited with code ${code} and signal ${signal}`));

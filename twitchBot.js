@@ -170,6 +170,11 @@ async function main() {
                   .replace('{bits}', message.bits)
                   .replace('{totalBits}', message.totalBits)
                   .replace('{message}', message.message);
+                  
+                if (!await openaiLib.analyseMessage(prompt)) {
+                    bot.say(channelName, promptsConfig.warningMessage);
+                    return;
+                }
                 const answerMessage = await openaiLib.answerToMessage(message.userName, prompt, 'onBits');
                 bot.say(channelName, answerMessage);
             }

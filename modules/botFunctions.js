@@ -125,7 +125,7 @@ function createBotFunctions(broadcasterApiClient, broadcasterId) {
                 let data = {
                     title: title.substring(0, 45),
                     outcomes: outcomes.map(outcome => outcome.substring(0, 25)),
-                    autoLockAfter: auto_lock_after,
+                    autoLockAfter: auto_lock_after*60,
                 }
 
                 console.log("Create prediction: " + JSON.stringify(data));
