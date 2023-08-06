@@ -47,7 +47,7 @@ function createSpeaker() {
         channels: 2,
         bitDepth: 16,
         sampleRate: 48000,
-        device: process.env.SPEAKER_DEVICE
+        // device: process.env.SPEAKER_DEVICE
     });
     if (enableDebug) {
         // speaker.on('drain', () => console.log('Speaker stream drained.'));
@@ -73,36 +73,52 @@ function createFFmpeg(audioStream, speaker) {
         'pipe:1'
     ]);
 
+    
+
     audioStream.pipe(ffmpeg.stdin);
     ffmpeg.stdout.pipe(speaker);
 
     return ffmpeg;
 }
 
-function handleFFmpegEvents(ffmpeg, resolve, reject) {
-    ffmpeg.on('error', (error) => {
-        console.error('FFmpeg error:', error);
-        reject(error);
-    });
+function handleFFmpegEvents(ffmpeg) {
+    return new Promise((resolve, reject) => {
+        ffmpeg.on('error', (error) => {
+            console.error('FFmpeg error:', error);
+            reject(error);
+        });
 
-    ffmpeg.on('close', (code, signal) => {
-        if (enableDebug) {
-            console.log(`FFmpeg closed with code ${code} and signal ${signal}`);
-        }
-        if (code !== 0) {
-            console.error(`FFmpeg exited with code ${code} and signal ${signal}`);
-            reject(new Error(`FFmpeg exited with code ${code} and signal ${signal}`));
-        } else {
-            resolve();
-        }
+        ffmpeg.on('close', (code, signal) => {
+            if (enableDebug) {
+                console.log(`FFmpeg closed with code ${code} and signal ${signal}`);
+            }
+            if (code !== 0) {
+                console.error(`FFmpeg exited with code ${code} and signal ${signal}`);
+                reject(new Error(`FFmpeg exited with code ${code} and signal ${signal}`));
+            } else {
+                resolve();
+            }
+        });
     });
 }
+
 
 const audioStream = new stream.PassThrough();
 const bufferingStream = new BufferingStream({ bufferLimit: 10000 }); // Adjust buffer limit as needed
 audioStream.pipe(bufferingStream);
 const speaker = createSpeaker();
 const ffmpeg = createFFmpeg(bufferingStream, speaker);
+
+
+handleFFmpegEvents(ffmpeg)
+    .then(() => {
+        if (enableDebug) console.log('FFmpeg processing completed successfully.');
+    })
+    .catch((error) => {
+        console.error('FFmpeg processing failed:', error);
+        process.exit(1);
+    });
+
 
 process.stdin.on('data', (audioBuffer) => {
     audioStream.write(audioBuffer);

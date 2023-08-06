@@ -84,16 +84,23 @@ async function playBufferingStream(audioStream) {
         const audioPlayer = spawn('node', ['audioPlayer.js']);
         audioStream.pipe(audioPlayer.stdin);
 
+        let errorOutput = '';
+        audioPlayer.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
         audioPlayer.on('close', (code) => {
             if (code !== 0) {
                 console.error(`Audio player exited with code ${code}`);
-                reject(new Error(`Audio player exited with code ${code}`));
+                console.error('Error details:', errorOutput);
+                reject(new Error(`Audio player exited with code ${code}. Details: ${errorOutput}`));
             } else {
                 resolve();
             }
         });
     });
 }
+
 
 // Function to get voices from ElevenLabs
 async function getElevenLabsVoices() {
@@ -138,16 +145,23 @@ function streamMP3FromFile(filePath) {
         const audioPlayer = spawn('node', ['audioPlayer.js']);
         audioStream.pipe(audioPlayer.stdin);
 
+        let errorOutput = '';
+        audioPlayer.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
         audioPlayer.on('close', (code) => {
             if (code !== 0) {
                 console.error(`Audio player exited with code ${code}`);
-                reject(new Error(`Audio player exited with code ${code}`));
+                console.error('Error details:', errorOutput);
+                reject(new Error(`Audio player exited with code ${code}. Details: ${errorOutput}`));
             } else {
                 resolve();
             }
         });
     });
 }
+
 
 
 

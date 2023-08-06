@@ -17,6 +17,7 @@ const app = express();
 app.use(express.json());
 const promptsConfig = JSON.parse(fs.readFileSync('./prompts/prompts.json', 'utf-8'));
 
+
 if (enableDebug) {
     process.on('uncaughtException', (err, origin) => {
         console.error('An uncaught exception occurred!');
