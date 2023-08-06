@@ -1,6 +1,14 @@
 
 [English version](README.md)
 
+
+---
+### 🚨 Mise à jour Majeure - 06/08/2023 🚨
+Mise à jour majeure vers la version 1.5. Veuillez vous assurer de tout réinstaller si vous mettez à jour depuis une version précédente. Vous pouvez conserver vos dossiers `prompts`, `wait_mp3`, `wake_word`, `wake_word_answer` ainsi que les fichiers `config.json` et `.env`.
+Pour le fichier `.env`, vous devrez ajouter les variables manquantes. Vous pouvez les trouver dans le fichier `.env.example`.
+---
+
+
 # Twitch Streamer GPT - Réinventer les streams Twitch
 
 Apportez un nouveau niveau d'engagement et de plaisir à vos streams Twitch avec notre innovante application Twitch Streamer GPT. Cette solution basée sur NodeJS intègre une technologie avancée, incluant OpenAI, Twurple, Easy-Bot, et plus encore, pour créer une expérience de visionnage plus interactive et agréable pour votre audience Twitch.
@@ -75,7 +83,7 @@ Embarquez dans cette aventure passionnante en quelques étapes simples :
     ```bash
     node index.js
     ```
-    Ou lancez le script `start.bat` pour démarrer le script.
+    Ou lancez le script `start_all.bat` pour démarrer le script.
 
 
 Voilà ! Votre propre script d'animation est en marche ! Préparez-vous maintenant à amplifier le plaisir et l'interactivité de vos streams Twitch.

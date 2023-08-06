@@ -1,14 +1,14 @@
 {
   "name": "twitch-streamer-gpt",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "",
-  "main": "index.js",
+  "main": "twitchBot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "choose-mic": "node index.js --choose-mic",
-    "calibrate": "node index.js --calibrate",
-    "choose-speaker": "node index.js --choose-speaker"
+    "start": "start node voiceRecorder.js && start node twitchBot.js",
+    "choose-mic": "node voiceRecorder.js --choose-mic",
+    "calibrate": "node voiceRecorder.js --calibrate",
+    "choose-speaker": "node voiceRecorder.js --choose-speaker"
   },
   "author": "Clad3815",
   "license": "ISC",
@@ -19,13 +19,15 @@
     "@twurple/pubsub": "^7.0.1",
     "axios": "^1.4.0",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "ffmpeg-static": "^5.1.0",
-    "fluent-ffmpeg": "^2.1.2",
     "google-tts-api": "^2.0.2",
-    "gpt-tokens": "^1.1.2",
+    "js-tiktoken": "^1.0.7",
     "jsonrepair": "^3.2.0",
+    "node-vad": "^1.1.4",
     "openai": "^3.3.0",
     "speaker": "^0.5.4",
-    "wavefile": "^11.0.0"
+    "wavefile": "^11.0.0",
+    "written-number": "^0.11.1"
   }
 }

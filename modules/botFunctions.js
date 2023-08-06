@@ -13,36 +13,86 @@ function createBotFunctions(broadcasterApiClient, broadcasterId) {
                     "properties": {
                         "question": {
                             "type": "string",
-                            "description": "The question to ask in the poll",
+                            "description": "The question that viewers will vote on. For example, What game should I play next? The question may contain a maximum of 60 characters.",
                         },
-                        "answers": {
+                        "choices": {
                             "type": "array",
-                            "description": "The answers to the poll",
+                            "description": "A list of choices that viewers may choose from. The list must contain a minimum of 2 choices and up to a maximum of 5 choices. The choice may contain a maximum of 25 characters.",
                             "items": {
                                 "type": "string"
                             }
                         },
                         "duration": {
                             "type": "number",
-                            "description": "The duration of the poll in seconds (default: 30s)"
+                            "description": "The length of time (in seconds) that the poll will run for. The minimum is 15 seconds and the maximum is 1800 seconds (30 minutes). (default: 300s (5minutes))"
                         },
                     },
-                    "required": ["question", "answers", "duration"]
+                    "required": ["question", "choices", "duration"]
                 },
             },
-            "function_to_call": async ({ question, answers, duration }) => {
+            "function_to_call": async ({ question, choices, duration }) => {
                 let data = {
-                    title: question,
-                    choices: answers,
+                    title: question.substring(0, 60),
+                    choices: choices.map(choice => choice.substring(0, 25)),
                     duration: duration,
                 };
 
                 console.log("Create poll: " + JSON.stringify(data));
-                await broadcasterApiClient.polls.createPoll(broadcasterId, data);
-                return "Poll created successfully !"
+                const poll = await broadcasterApiClient.polls.createPoll(broadcasterId, data);
+                return "Poll created successfully ! Poll ID for future reference: " + poll.id
 
             },
         },
+        {
+            "name": "manage_poll",
+            "onlyBroadcaster": true,
+            "gptFunction": {
+                "name": "manage_poll",
+                "description": "Manage / Get Information of a created poll on Twitch by its ID",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["get", "end"],
+                            "description": "The action to perform on the poll. This could be 'end' or 'get'."
+                        },
+                        "poll_id": {
+                            "type": "string",
+                            "description": "The ID of the poll to manage."
+                        }
+                    },
+                    "required": ["action", "poll_id"]
+                },
+            },
+            "function_to_call": async ({ action, poll_id, show_result = true }) => {
+                console.log(`Manage poll: ${action} on poll ID: ${poll_id}`);
+                switch (action) {
+                    case 'end':
+                        const pollEndResult = await broadcasterApiClient.polls.endPoll(broadcasterId, poll_id, show_result);
+                        return `Poll ended successfully. Result: ${JSON.stringify(pollEndResult)}`;
+                    case 'get':
+                        const pollInfo = await broadcasterApiClient.polls.getPollById(broadcasterId, poll_id);
+                        if (!pollInfo) {
+                            return `Poll with ID ${poll_id} not found.`;
+                        }
+                        let choices = [];
+                        for (let i = 0; i < pollInfo.choices.length; i++) {
+                            choices.push({ title: pollInfo.choices[i].title, totalVotes: pollInfo.choices[i].totalVotes });
+                        }
+
+                        let returnData = {
+                            status: pollInfo.status,
+                            title: pollInfo.title,
+                            choices: choices,
+                        }
+
+                        return `Poll information: ${JSON.stringify(returnData)}`;
+                    default:
+                        return 'Invalid action provided. Available actions are "end" and "get".';
+                }
+            },
+        },        
         {
             "name": "create_prediction",
             "onlyBroadcaster": true,  // If true, only the broadcaster can use this function
@@ -54,18 +104,18 @@ function createBotFunctions(broadcasterApiClient, broadcasterId) {
                     "properties": {
                         "title": {
                             "type": "string",
-                            "description": "The title of the prediction (max 25 characters)",
+                            "description": "The question that the broadcaster is asking. For example, Will I finish this entire pizza? The title is limited to a maximum of 45 characters.",
                         },
                         "outcomes": {
                             "type": "array",
-                            "description": "The outcomes of the prediction",
+                            "description": "The list of possible outcomes that the viewers may choose from. The list must contain a minimum of 2 choices and up to a maximum of 10 choices. The title is limited to a maximum of 25 characters.",
                             "items": {
                                 "type": "string"
                             }
                         },
                         "auto_lock_after": {
                             "type": "number",
-                            "description": "The duration of the prediction in seconds (default: 30s)"
+                            "description": "The duration of the prediction in minutes (default: 10min)"
                         },
                     },
                     "required": ["title", "outcomes", "auto_lock_after"]
@@ -73,8 +123,8 @@ function createBotFunctions(broadcasterApiClient, broadcasterId) {
             },
             "function_to_call": async ({ title, outcomes, auto_lock_after }) => {
                 let data = {
-                    title: title.substring(0, 25),
-                    outcomes: outcomes,
+                    title: title.substring(0, 45),
+                    outcomes: outcomes.map(outcome => outcome.substring(0, 25)),
                     autoLockAfter: auto_lock_after,
                 }
 
