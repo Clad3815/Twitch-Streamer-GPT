@@ -192,7 +192,9 @@ app.post('/transcription', async (req, res) => {
     const transcription = req.body.transcription;
 
     readRandomWaitMP3();
-    openaiLib.answerToMessage(channelName, transcription);
+    openaiLib.answerToMessage(channelName, transcription).then((answerMessage) => {
+        bot.say(channelName, answerMessage);
+    });
 
     res.sendStatus(200);
 });
