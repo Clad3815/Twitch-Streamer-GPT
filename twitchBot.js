@@ -122,6 +122,7 @@ async function main() {
     // Check OpenAI model availability
     try {
         await openaiLib.openai.retrieveModel(process.env.OPENAI_MODEL);
+        console.log(`Using OpenAI model ${process.env.OPENAI_MODEL}.`);
     } catch (error) {
         console.log(`The model ${process.env.OPENAI_MODEL} is not available.`);
         process.exit(1);

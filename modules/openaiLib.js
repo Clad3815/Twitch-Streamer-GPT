@@ -109,14 +109,17 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
     }).filter((gptFunction) => {
         return canUseFunctions || !gptFunction.onlyBroadcaster;
     });
-    if (enableDebug) {
-        console.log(JSON.stringify(gptMessages, null, 2));
-    }
     while (result == null && retries < retriesMax) {
         try {
+            const { model: modelToUse, messages: messagesToUse } = getCleanedMessagesForModel(gptMessages, AIModel);
+            if (enableDebug) {
+                console.log("Model used: " + modelToUse);
+                console.log(JSON.stringify(messagesToUse, null, 2));
+
+            }
             result = await openai.createChatCompletion({
-                model: AIModel,
-                messages: getCleanedMessagesForModel(gptMessages, AIModel),
+                model: modelToUse,
+                messages: messagesToUse,
                 temperature: parseFloat(process.env.OPENAI_MODEL_TEMP),
                 max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER),
                 function_call: functions ? "auto" : "none",
@@ -311,52 +314,46 @@ function calculateGPTTokens(messages, model) {
 }
 
 function getCleanedMessagesForModel(messages, model) {
-    let autoSwitch = process.env.AUTO_USE_SMALL_MODEL === '1'; // Assuming it's a string 'true' or 'false'
-    
+    let autoSwitch = process.env.AUTO_USE_SMALL_MODEL === '1';
+
     let maxTokensForModel = parseInt(process.env.OPENAI_MAX_TOKENS_TOTAL, 10) || MAX_TOKENS[model];
     maxTokensForModel -= parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER, 10);
-    // Keep a margin of 5% of the max tokens for the model
-    maxTokensForModel = Math.floor(maxTokensForModel * 0.95);
-    
-    console.log(`Max Tokens for Model: ${maxTokensForModel}`);
-    
-    let totalTokens = calculateGPTTokens(messages, model);
+    // Keep a margin of 10% of the max tokens for the model
+    maxTokensForModel = Math.floor(maxTokensForModel * 0.90);
 
-    // If tokens exceed and auto-switching is enabled, choose the next best model
-    if (totalTokens > maxTokensForModel && autoSwitch) {
-        switch (model) {
-            case 'gpt-3.5-turbo-16k':
-                model = 'gpt-3.5-turbo';
-                break;
-            case 'gpt-4-32k':
-                model = 'gpt-4';
-                break;
-            default:
-                // console.log('No smaller model available or model not recognized.');
-                break;
-        }
-    }
+    console.log(`Max Tokens for Model: ${maxTokensForModel}`);
+
+    let totalTokens = calculateGPTTokens([messages[0]], model); // Add tokens for the system prompt
 
     // Now, get the cleaned messages for the selected model
-    let cleanedMessages = [];
-    totalTokens = 0;
-    for (let i = messages.length - 1; i >= 0; i--) { 
+    let cleanedMessages = [messages[0]]; // Start with the system prompt
+
+    for (let i = messages.length - 1; i >= 1; i--) {  // Start from the end, but skip system prompt
         const message = messages[i];
         try {
             const messageTokens = calculateGPTTokens([message], model);
 
             if (totalTokens + messageTokens <= maxTokensForModel) {
-                // Add the message to the beginning of the cleaned messages
-                cleanedMessages.unshift(message);
-    
+                // Add the message to the beginning of the cleaned messages, after the system prompt
+                cleanedMessages.splice(1, 0, message);
+
                 // Add the tokens to the total
                 totalTokens += messageTokens;
             } else {
-                // console.log(`Message Skipped, Token Limit Reached`);
+                console.log(`Message Skipped, Token Limit Reached`);
                 break;
             }
         } catch (error) {
             console.log(`Error processing message: ${error.message}`);
+        }
+    }
+
+    // If tokens fit within a smaller model and auto-switching is enabled, choose the smaller model
+    if (autoSwitch) {
+        if (model === 'gpt-3.5-turbo-16k' && totalTokens <= MAX_TOKENS['gpt-3.5-turbo']) {
+            model = 'gpt-3.5-turbo';
+        } else if (model === 'gpt-4-32k' && totalTokens <= MAX_TOKENS['gpt-4']) {
+            model = 'gpt-4';
         }
     }
 
@@ -366,6 +363,7 @@ function getCleanedMessagesForModel(messages, model) {
         model: model
     };
 }
+
 
 async function speechToText(filePath) {
     const response = await openai.createTranscription(fs.createReadStream(filePath), "whisper-1");
