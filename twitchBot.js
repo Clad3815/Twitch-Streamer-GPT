@@ -71,8 +71,9 @@ if (process.env.ENABLE_TWITCH_ONSUB === '1') {
 if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     bot.onResub(({ broadcasterName, userName, months }) => {
         const prompt = promptsConfig.onResub.replace('{months}', months);
-        const message = openaiLib.answerToMessage(userName, prompt, 'onResub');
-        bot.say(channelName, message);
+        openaiLib.answerToMessage(userName, prompt, 'onResub').then((message) => {
+            bot.say(channelName, message);
+        });
     });
 }
 
@@ -83,32 +84,39 @@ if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
             giftCounts.set(gifterName, previousGiftCount - 1);
         } else {
             const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
-            const message = openaiLib.answerToMessage(userName, prompt, 'onSubGift');
-            bot.say(channelName, message);
+            openaiLib.answerToMessage(userName, prompt, 'onSubGift').then((message) => {
+                bot.say(channelName, message);
+            });
         }
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
-    bot.onCommunitySub(({ broadcasterName, gifterName, subInfo }) => {
-        const prompt = promptsConfig.onCommunitySub.replace('{count}', subInfo.count);
-        const message = openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub');
-        bot.say(channelName, message);
+    bot.onCommunitySub(({ broadcasterName, gifterName }) => {
+        const giftSubCount = 1;
+        const prompt = promptsConfig.onCommunitySub.replace('{count}', giftSubCount);
+        // giftCounts.set(user, previousGiftCount + subInfo.count);
+
+        openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub').then((message) => {
+            bot.say(channelName, message);
+        });
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONPRIMEPAIDUPGRADE === '1') {
     bot.onPrimePaidUpgrade(({ broadcasterName, userName }) => {
-        const message = openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade');
-        bot.say(channelName, message);
+        openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
+            bot.say(channelName, message);
+        });
     });
 }
 
 if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
     bot.onGiftPaidUpgrade(({ broadcasterName, userName, gifterDisplayName }) => {
         const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
-        const message = openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade');
-        bot.say(channelName, message);
+        openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade').then((message) => {
+            bot.say(channelName, message);
+        });
     });
 }
 
