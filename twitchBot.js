@@ -162,8 +162,11 @@ async function main() {
     if (process.env.ENABLE_TWITCH_ONBITS === '1') {
         pubSubClient.onBits(user.id, async (message) => {
             console.log(`${message.userName} just cheered ${message.bits} bits!`);
-            const answerMessage = await openaiLib.answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits (Total envoyé depuis le début de la chaine par le viewer: `"+message.totalBits+"`) avec le message `"+message.message+"`", 'onBits');
-            bot.say(channelName, answerMessage);
+            const minBits = process.env.TWITCH_MIN_BITS ? parseInt(process.env.TWITCH_MIN_BITS) : 0;
+            if (message.bits >= minBits) {
+                const answerMessage = await openaiLib.answerToMessage(message.userName, "Vient de cheer " + message.bits + " bits (Total envoyé depuis le début de la chaine par le viewer: `"+message.totalBits+"`) avec le message `"+message.message+"`", 'onBits');
+                bot.say(channelName, answerMessage);
+            }
         });
     }
 
