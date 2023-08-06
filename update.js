@@ -15,6 +15,11 @@ const fetchFiles = async (dirPath = '') => {
 const downloadFile = async (filePath) => {
     const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${filePath}`;
     const response = await axios.get(url);
+    // Create the directory if it doesn't exist
+    const dirName = path.dirname(filePath);
+    if (!fs.existsSync(path.join(__dirname,  dirName))) {
+        fs.mkdirSync(path.join(__dirname,  dirName), { recursive: true });
+    }
     fs.writeFileSync(path.join(__dirname, filePath), response.data);
     console.log(`Downloaded ${filePath}`);
 };
@@ -28,6 +33,8 @@ const processFiles = async (dirPath = '') => {
     for (const file of files) {
         if (file.type === 'file' && (file.path.endsWith('.js') || file.path.endsWith('.bat') || file.path.endsWith('package.json') )) {
             await downloadFile(file.path);
+            // Wait 1 second to avoid GitHub API rate limit
+            await new Promise((resolve) => setTimeout(resolve, 1000));
         } else if (file.type === 'dir') {
             // Recursively process subdirectories
             await processFiles(file.path);

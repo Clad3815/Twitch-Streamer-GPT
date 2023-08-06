@@ -3,6 +3,7 @@ const Speaker = require('speaker');
 const stream = require('stream');
 const { spawn } = require('child_process');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 dotenv.config();
 const enableDebug = process.env.DEBUG_MODE == "1";
@@ -62,7 +63,18 @@ function createSpeaker() {
     return speaker;
 }
 
+function addDebugLog(text) {
+    if (enableDebug) {
+        console.log(text);
+        // Put in debug.log file
+        fs.appendFileSync('debug.log', text + '\n');
+    }
+}
+
 function createFFmpeg(audioStream, speaker) {
+    if (enableDebug) {
+        addDebugLog('Creating FFmpeg process: ' + ffmpegStatic);
+    }
     const ffmpeg = spawn(ffmpegStatic, [
         '-i', 'pipe:0',
         '-f', 's16le',
@@ -89,9 +101,8 @@ function handleFFmpegEvents(ffmpeg) {
         });
 
         ffmpeg.on('close', (code, signal) => {
-            if (enableDebug) {
-                console.log(`FFmpeg closed with code ${code} and signal ${signal}`);
-            }
+            addDebugLog(`FFmpeg closed with code ${code} and signal ${signal}`);
+            
             if (code !== 0) {
                 console.error(`FFmpeg exited with code ${code} and signal ${signal}`);
                 reject(new Error(`FFmpeg exited with code ${code} and signal ${signal}`));
