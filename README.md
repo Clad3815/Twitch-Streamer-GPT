@@ -81,7 +81,7 @@ Hop on this exciting journey with a few simple steps:
 
 5. Start the script (in background)
     ```bash
-    node index.js
+    npm start
     ```
     Or run the `start_all.bat` file.
 
