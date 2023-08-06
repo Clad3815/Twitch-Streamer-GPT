@@ -235,7 +235,7 @@ function readConfig() {
         if (config.MICROPHONE_DEVICE) {
             MICROPHONE_DEVICE = config.MICROPHONE_DEVICE;
         }
-        if (config.SILENCE_THRESHOLD) {
+        if (config.SILENCE_THRESHOLD >= 0) {
             SILENCE_THRESHOLD = config.SILENCE_THRESHOLD;
         }
     }
