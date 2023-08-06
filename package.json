@@ -1,6 +1,6 @@
 {
   "name": "twitch-streamer-gpt",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "",
   "main": "twitchBot.js",
   "scripts": {
@@ -24,7 +24,6 @@
     "google-tts-api": "^2.0.2",
     "js-tiktoken": "^1.0.7",
     "jsonrepair": "^3.2.0",
-    "node-vad": "^1.1.4",
     "openai": "^3.3.0",
     "speaker": "^0.5.4",
     "wavefile": "^11.0.0",
