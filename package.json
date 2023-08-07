@@ -15,6 +15,8 @@
   "dependencies": {
     "@picovoice/porcupine-node": "^2.2.1",
     "@picovoice/pvrecorder-node": "^1.2.0",
+    "@twurple/auth": "^7.0.1",
+    "@twurple/auth-tmi": "^7.0.1",
     "@twurple/easy-bot": "^7.0.1",
     "@twurple/pubsub": "^7.0.1",
     "axios": "^1.4.0",

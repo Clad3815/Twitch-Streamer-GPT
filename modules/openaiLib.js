@@ -93,8 +93,8 @@ async function analyseMessage(text) {
     return true;
 }
 
-async function answerToMessage(userData, message, goal = '', isFunctionCall = false) {
-    let systemPrompt = generatePromptFromGoal(goal);
+async function answerToMessage(userData, message, isFunctionCall = false) {
+    let systemPrompt = generatePrompt();
     userData.message = message;
     if (!isFunctionCall) {
         console.log('#############################################');
@@ -154,14 +154,14 @@ async function answerToMessage(userData, message, goal = '', isFunctionCall = fa
         console.log(textAnswer + "\n");
         console.log("Generating TTS of the message with ElevenLabs API");
         try {
-            const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
-            if (gptAnswer.function_call) {
-                // Play the TTS
-                if (audioStream)   voiceHandler.playBufferingStream(audioStream);
-            } else { 
-                // Play the TTS
-                if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
-            }
+            // const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
+            // if (gptAnswer.function_call) {
+            //     // Play the TTS
+            //     if (audioStream)   voiceHandler.playBufferingStream(audioStream);
+            // } else { 
+            //     // Play the TTS
+            //     if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
+            // }
         } catch (error) {
             if (enableDebug) console.log("Error while generating TTS with ElevenLabs API:", error);
         }
@@ -169,7 +169,7 @@ async function answerToMessage(userData, message, goal = '', isFunctionCall = fa
     if (gptAnswer.function_call) {
         const functionCall = await handleFunctionCall(gptAnswer.function_call);
         history.push(functionCall);
-        return await answerToMessage(userData, message, goal, true);
+        return await answerToMessage(userData, message, true);
     }
     saveHistory();
     console.log('#############################################');
@@ -240,7 +240,7 @@ function setStreamInfos(streamData) {
 }
 
 
-function generatePromptFromGoal(goal) {
+function generatePrompt() {
     let ttsInfosData = voiceData.labels;
     let ttsInfos = {};
 
@@ -255,12 +255,6 @@ function generatePromptFromGoal(goal) {
     }
     const pathToPrompts = path.join(__dirname, '..', 'prompts');
     const systemPrompt = readFileSafely(path.join(pathToPrompts, 'base.txt'));
-    let goalPrompt;
-    if (!goal) {
-        goalPrompt = "";
-    } else {
-        goalPrompt = readFileSafely(path.join(pathToPrompts, `${goal}.txt`), "");
-    }
     const customInstructions = readFileSafely(path.join(pathToPrompts, 'custom_instructions.txt'));
     let customInstructionsText = "";
     if (customInstructions) {
@@ -273,6 +267,7 @@ function generatePromptFromGoal(goal) {
     }
     const charLimit = process.env.OPENAI_MAX_CARACTERS_INSTRUCTIONS || 100;
     const wordLimitNotice = `IMPORTANT: The TTS service is not free. Keep your answer within ${charLimit} characters at the most.`;
+    const languageRestriction = process.env.AI_MAIN_LANGUAGE ? `You must use only the language "${process.env.AI_MAIN_LANGUAGE}" in your answer, no exception. Even if the past messages are in english or another language.` : "";
 
     let streamerGenderInfos = "";
     if (process.env.STREAMER_GENDER && process.env.STREAMER_GENDER.length > 0) {
@@ -283,15 +278,13 @@ function generatePromptFromGoal(goal) {
         '{{channelName}}': channelName,
         '{{streamInfos}}': JSON.stringify(streamInfos, null, 2) + streamerGenderInfos,
         '{{ttsInfos}}': ttsInfosText,
-        '{{goalPrompt}}': goalPrompt,
         '{{customInstructions}}': customInstructionsText,
-        '{{mainLanguage}}': process.env.AI_MAIN_LANGUAGE,
     }
     
     const formattedSystemPrompt = Object.keys(replaceObj).reduce((str, key) => str.replace(new RegExp(key, 'g'), replaceObj[key]), systemPrompt);
     
     const currentDateTime = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
-    return `Current datetime: ${currentDateTime}\n${formattedSystemPrompt}\n${wordLimitNotice}`;
+    return `Current datetime: ${currentDateTime}\n${formattedSystemPrompt}\n${wordLimitNotice}\n${languageRestriction}`;
 }
 
 

@@ -10,6 +10,8 @@ const voiceHandler = require("./modules/voiceHandler.js");
 const openaiLib = require("./modules/openaiLib.js");
 const express = require('express');
 
+const tmi = require('@twurple/auth-tmi');
+
 dotenv.config();
 const enableDebug = process.env.DEBUG_MODE === '1';
 // Create an Express app
@@ -58,6 +60,16 @@ const bot = new Bot({
     channels: [channelName],
 });
 
+const tmiClient = new tmi.Client({
+	options: { debug: true, messagesLogLevel: 'info' },
+	connection: {
+		reconnect: true,
+		secure: true
+	},
+	authProvider: broadcasterAuthProvider,
+	channels: [channelName]
+});
+
 console.log("Bot started and listening to channel " + channelName);
 
 async function handleTwitchEvent(eventHandler, data) {
@@ -66,20 +78,32 @@ async function handleTwitchEvent(eventHandler, data) {
 }
 
 // Twitch Event Subscriptions
+
 if (process.env.ENABLE_TWITCH_ONSUB === '1') {
     bot.onSub((data) => handleTwitchEvent(handleOnSub, data));
 }
 
 if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
-    bot.onResub((data) => handleTwitchEvent(handleOnResub, data));
+    tmiClient.on("resub", (channel, username, streakMonths, message, userstate, methods) => {
+        let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
+        handleTwitchEvent(handleOnResub, { broadcasterName: channel, userName: username, months: cumulativeMonths });
+    });
 }
+
 if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
-    bot.onSubGift((data) => handleTwitchEvent(handleOnSubGift, data));
+    tmiClient.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
+        let senderCount = ~~userstate["msg-param-sender-count"];
+        handleTwitchEvent(handleOnSubGift, { broadcasterName: channel, gifterName: username, recipient: recipient, totalGiftSubCount: senderCount });
+    });
 }
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
-    bot.onCommunitySub((data) => handleTwitchEvent(handleOnCommunitySub, data));
+    tmiClient.on("submysterygift", (channel, username, numbOfSubs, methods, userstate) => {
+        let senderCount = ~~userstate["msg-param-sender-count"];
+        handleTwitchEvent(handleOnCommunitySub, { broadcasterName: channel, gifterName: username, giftSubCount: numbOfSubs, totalGiftSubCount: senderCount });
+    });
 }
+
 
 if (process.env.ENABLE_TWITCH_ONPRIMEPAIDUPGRADE === '1') {
     bot.onPrimePaidUpgrade((data) => handleTwitchEvent(handleOnPrimePaidUpgrade, data));
@@ -102,56 +126,65 @@ function readRandomWaitMP3() {
 
 // Event Handling Functions
 async function handleOnSub({ broadcasterName, userName }) {
-    const userData = await getViewerInfos(userName);
-    openaiLib.answerToMessage(userData, promptsConfig.onSub, 'onSub').then((message) => {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onSub.replace('{userName}', userName).replace('{broadcasterName}', broadcasterName);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnResub({ broadcasterName, userName, months }) {
-    const userData = await getViewerInfos(userName);
-    const prompt = promptsConfig.onResub.replace('{months}', months);
-    openaiLib.answerToMessage(userData, prompt, 'onResub').then((message) => {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onResub.replace('{userName}', userName).replace('{broadcasterName}', broadcasterName).replace('{months}', months);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
     });
 }
 
-async function handleOnSubGift({ broadcasterName, gifterName, userName }) {
-    const previousGiftCount = giftCounts.get(gifterName) ?? 0;
-    if (previousGiftCount > 0) {
-        giftCounts.set(gifterName, previousGiftCount - 1);
-    } else {
-        const userData = await getViewerInfos(userName);
-        const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
-        openaiLib.answerToMessage(userData, prompt, 'onSubGift').then((message) => {
-            bot.say(channelName, message);
-        });
-    }
+async function handleOnSubGift({ broadcasterName, gifterName, recipient, totalGiftSubCount }) {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onSubGift.replace('{userName}', recipient).replace('{gifterName}', gifterName).replace('{broadcasterName}', broadcasterName);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
+        bot.say(channelName, message);
+    });
 }
 
-async function handleOnCommunitySub({ broadcasterName, gifterName }) {
-    const giftSubCount = 1;
-    const prompt = promptsConfig.onCommunitySub.replace('{count}', giftSubCount);
-    const userData = await getViewerInfos(gifterName);
-    openaiLib.answerToMessage(userData, prompt, 'onCommunitySub').then((message) => {
+async function handleOnCommunitySub({ broadcasterName, gifterName, giftSubCount, totalGiftSubCount }) {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onCommunitySub.replace('{gifterName}', gifterName).replace('{broadcasterName}', broadcasterName).replace('{giftSubCount}', giftSubCount).replace('{totalGiftSubCount}', totalGiftSubCount);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnPrimePaidUpgrade({ broadcasterName, userName }) {
-    const userData = await getViewerInfos(userName);
-    openaiLib.answerToMessage(userData, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onPrimePaidUpgrade.replace('{userName}', userName).replace('{broadcasterName}', broadcasterName);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnGiftPaidUpgrade({ broadcasterName, userName, gifterDisplayName }) {
-    const userData = await getViewerInfos(userName);
-    const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
-    openaiLib.answerToMessage(userData, prompt, 'onGiftPaidUpgrade').then((message) => {
+    const userData = {
+        name: "system"
+    };
+    const prompt = promptsConfig.onGiftPaidUpgrade.replace('{userName}', userName).replace('{gifterDisplayName}', gifterDisplayName).replace('{broadcasterName}', broadcasterName);
+    openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
     });
 }
+
 
 async function main() {
     // Check OpenAI model availability
@@ -226,7 +259,7 @@ async function main() {
                     }
                     
                     const userData = await getViewerInfos(message.userName);
-                    const answerMessage = await openaiLib.answerToMessage(userData, prompt, 'onBits');
+                    const answerMessage = await openaiLib.answerToMessage(userData, prompt);
                     bot.say(channelName, answerMessage);
                 }
             };
@@ -235,7 +268,6 @@ async function main() {
             await voiceHandler.addActionToQueue(bitsAction);
         });
     }
-
 
 
     // Get current game and title
@@ -263,6 +295,16 @@ async function main() {
         }
         openaiLib.setStreamInfos(streamInfos);
     }, 10000);
+
+    
+    await tmiClient.connect().catch(console.error);
+
+    
+    // Call the test function to run the tests
+    test();
+
+
+
 }
 
 // Endpoint to receive transcriptions from the voice input script
@@ -317,6 +359,53 @@ async function getViewerInfos(viewer_name) {
         }
     }
 }
+
+function test() {
+    // Simulating handleOnSub
+    // handleOnSub({
+    //     broadcasterName: channelName,
+    //     userName: 'MrPoule',
+    // });
+
+    // Simulating handleOnResub
+    // handleOnResub({
+    //     broadcasterName: channelName,
+    //     userName: 'ResubscriberUser',
+    //     months: 5
+    // });
+
+    // // Simulating handleOnSubGift
+    // handleOnSubGift({
+    //     broadcasterName: channelName,
+    //     gifterName: 'MrPoule',
+    //     recipient: 'Dingus',
+    //     totalGiftSubCount: 10
+    // });
+
+    // // Simulating handleOnCommunitySub
+    // handleOnCommunitySub({
+    //     broadcasterName: channelName,
+    //     gifterName: 'MrPoule',
+    //     giftSubCount: 3,
+    //     totalGiftSubCount: 25
+    // });
+
+    // // Simulating handleOnPrimePaidUpgrade
+    handleOnPrimePaidUpgrade({
+        broadcasterName: channelName,
+        userName: 'MrPoule'
+    });
+
+    // // Simulating handleOnGiftPaidUpgrade
+    // handleOnGiftPaidUpgrade({
+    //     broadcasterName: channelName,
+    //     userName: 'GiftedUser',
+    //     gifterDisplayName: 'GenerousGifter'
+    // });
+
+    console.log('Test completed. Check the bot responses.');
+}
+
 
 // Start the Express server
 const port = process.env.PORT_NUMBER || 3000;
