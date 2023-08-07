@@ -102,14 +102,16 @@ function readRandomWaitMP3() {
 
 // Event Handling Functions
 async function handleOnSub({ broadcasterName, userName }) {
-    openaiLib.answerToMessage(userName, promptsConfig.onSub, 'onSub').then((message) => {
+    const userData = await getViewerInfos(userName);
+    openaiLib.answerToMessage(userData, promptsConfig.onSub, 'onSub').then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnResub({ broadcasterName, userName, months }) {
+    const userData = await getViewerInfos(userName);
     const prompt = promptsConfig.onResub.replace('{months}', months);
-    openaiLib.answerToMessage(userName, prompt, 'onResub').then((message) => {
+    openaiLib.answerToMessage(userData, prompt, 'onResub').then((message) => {
         bot.say(channelName, message);
     });
 }
@@ -119,8 +121,9 @@ async function handleOnSubGift({ broadcasterName, gifterName, userName }) {
     if (previousGiftCount > 0) {
         giftCounts.set(gifterName, previousGiftCount - 1);
     } else {
+        const userData = await getViewerInfos(userName);
         const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
-        openaiLib.answerToMessage(userName, prompt, 'onSubGift').then((message) => {
+        openaiLib.answerToMessage(userData, prompt, 'onSubGift').then((message) => {
             bot.say(channelName, message);
         });
     }
@@ -129,20 +132,23 @@ async function handleOnSubGift({ broadcasterName, gifterName, userName }) {
 async function handleOnCommunitySub({ broadcasterName, gifterName }) {
     const giftSubCount = 1;
     const prompt = promptsConfig.onCommunitySub.replace('{count}', giftSubCount);
-    openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub').then((message) => {
+    const userData = await getViewerInfos(gifterName);
+    openaiLib.answerToMessage(userData, prompt, 'onCommunitySub').then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnPrimePaidUpgrade({ broadcasterName, userName }) {
-    openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
+    const userData = await getViewerInfos(userName);
+    openaiLib.answerToMessage(userData, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
         bot.say(channelName, message);
     });
 }
 
 async function handleOnGiftPaidUpgrade({ broadcasterName, userName, gifterDisplayName }) {
+    const userData = await getViewerInfos(userName);
     const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
-    openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade').then((message) => {
+    openaiLib.answerToMessage(userData, prompt, 'onGiftPaidUpgrade').then((message) => {
         bot.say(channelName, message);
     });
 }
@@ -163,7 +169,7 @@ async function main() {
 
     let streamInfos = {};
 
-    const user = await apiClient.users.getUserByName(channelName);
+    const user = await broadcasterApiClient.users.getUserByName(channelName);
     const userFollowers = await user.getChannelFollowers();
 
     openaiLib.initVoice();
@@ -192,7 +198,8 @@ async function main() {
                         console.log("Play random wait mp3");
                         readRandomWaitMP3();
                     }
-                    const answerMessage = await openaiLib.answerToMessage(message.userDisplayName, message.message);
+                    const userData = await getViewerInfos(message.userDisplayName);
+                    const answerMessage = await openaiLib.answerToMessage(userData, message.message);
                     bot.say(channelName, answerMessage);
                 }
             };
@@ -217,7 +224,9 @@ async function main() {
                         bot.say(channelName, promptsConfig.warningMessage);
                         return;
                     }
-                    const answerMessage = await openaiLib.answerToMessage(message.userName, prompt, 'onBits');
+                    
+                    const userData = await getViewerInfos(message.userName);
+                    const answerMessage = await openaiLib.answerToMessage(userData, prompt, 'onBits');
                     bot.say(channelName, answerMessage);
                 }
             };
@@ -230,7 +239,7 @@ async function main() {
 
 
     // Get current game and title
-    const stream = await apiClient.streams.getStreamByUserId(user.id);
+    const stream = await broadcasterApiClient.streams.getStreamByUserId(user.id);
     if (stream) {
         streamInfos.gameName = stream.gameName;
         streamInfos.title = stream.title;
@@ -242,11 +251,11 @@ async function main() {
     // Create an interval to update the stream infos
     setInterval(async () => {
         let streamInfos = {};
-        const user = await apiClient.users.getUserByName(channelName);
+        const user = await broadcasterApiClient.users.getUserByName(channelName);
         const userFollowers = await user.getChannelFollowers();
         streamInfos.followers = userFollowers.total;
         streamInfos.description = user.description;
-        const stream = await apiClient.streams.getStreamByUserId(user.id);
+        const stream = await broadcasterApiClient.streams.getStreamByUserId(user.id);
         if (stream) {
             streamInfos.gameName = stream.gameName;
             streamInfos.title = stream.title;
@@ -262,7 +271,11 @@ app.post('/transcription', async (req, res) => {
 
     const onTranscriptionAction = async () => {
         readRandomWaitMP3();
-        openaiLib.answerToMessage(channelName, transcription).then((answerMessage) => {
+        let userData = {
+            name: channelName,
+            isBroadcaster: true
+        };
+        openaiLib.answerToMessage(userData, transcription).then((answerMessage) => {
             bot.say(channelName, answerMessage);
         });
     };
@@ -271,6 +284,39 @@ app.post('/transcription', async (req, res) => {
     voiceHandler.addActionToQueue(onTranscriptionAction);
     res.sendStatus(200);
 });
+
+async function getViewerInfos(viewer_name) {
+    const user = await apiClient.users.getUserByName(viewer_name);
+    const broadcaster = await apiClient.users.getUserByName(channelName);
+    if (user.id === broadcaster.id) {
+        return {
+            name: viewer_name,
+            isBroadcaster: true,
+        }
+    } else {
+        try {
+            const channel = await apiClient.channels.getChannelInfoById(broadcaster.id);
+            const isSub = await user.getSubscriptionTo(broadcaster.id);
+            const isFollow = await user.getFollowedChannel(broadcaster.id);
+            const isVip = await broadcasterApiClient.channels.checkVipForUser(channel, user);
+            const isMod = await broadcasterApiClient.moderation.checkUserMod(channel, user);
+            return {
+                name: viewer_name,
+                isModerator: isMod ? true : false,
+                isSubscriber: isSub ? true : false,
+                isVip: (isVip || isMod) ? true : false,
+                isFollower: isFollow ? true : false,
+            }
+        } catch (e) {
+            if (enableDebug) {
+                console.log(e);
+            }
+            return {
+                name: viewer_name
+            }
+        }
+    }
+}
 
 // Start the Express server
 const port = process.env.PORT_NUMBER || 3000;

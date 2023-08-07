@@ -80,22 +80,20 @@ async function analyseMessage(text) {
     return true;
 }
 
-async function answerToMessage(messageUserName, message, goal = '', isFunctionCall = false) {
+async function answerToMessage(userData, message, goal = '', isFunctionCall = false) {
     let systemPrompt = generatePromptFromGoal(goal);
-    let canUseFunctions = false;
-    if (messageUserName == channelName) {
-        messageUserName += " (the streamer)";
-        canUseFunctions = true;
-    }
+    userData.message = message;
     if (!isFunctionCall) {
         console.log('#############################################');
         console.log("Sending message to OpenAI API");
         history.push({
             "role": "user",
-            "content": JSON.stringify({ "user": messageUserName, "message": message })
+            "content": JSON.stringify(userData)
         });
     }
-    console.log(systemPrompt);
+    if (enableDebug) {
+        console.log(systemPrompt);
+    }
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
 
     let retries = 0;
@@ -105,7 +103,7 @@ async function answerToMessage(messageUserName, message, goal = '', isFunctionCa
     let functions = botFunctions.map((botFunction) => {
         return botFunction.gptFunction;
     }).filter((gptFunction) => {
-        return canUseFunctions || !gptFunction.onlyBroadcaster;
+        return userData.isBroadcaster || !gptFunction.onlyBroadcaster;
     });
     while (result == null && retries < retriesMax) {
         try {
@@ -156,9 +154,9 @@ async function answerToMessage(messageUserName, message, goal = '', isFunctionCa
         }
     }
     if (gptAnswer.function_call) {
-        const functionCall = await handleFunctionCall(gptAnswer.function_call, messageUserName);
+        const functionCall = await handleFunctionCall(gptAnswer.function_call);
         history.push(functionCall);
-        return await answerToMessage(messageUserName, message, goal, true);
+        return await answerToMessage(userData, message, goal, true);
     }
     saveHistory();
     console.log('#############################################');
@@ -168,7 +166,7 @@ async function answerToMessage(messageUserName, message, goal = '', isFunctionCa
 
 
 // Functions
-async function handleFunctionCall(functionCall, userName) {
+async function handleFunctionCall(functionCall) {
     // Finding the corresponding function from botFunctions
     const botFunction = botFunctions.find(f => f.gptFunction.name === functionCall.name);
     // If the function is found, call it with the provided arguments
