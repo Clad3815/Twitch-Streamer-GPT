@@ -27,7 +27,7 @@ const ensureDirExists = async (dirPath) => {
 
 const fileExists = async (filePath) => {
     try {
-        await fs.promises.access(filePath);
+        await fs.access(filePath);
         return true;
     } catch (error) {
         return false;
@@ -47,19 +47,19 @@ const downloadFile = async (filePath, fileSha) => {
         console.log(`Skipped ${filePath} (no changes)`);
         return; // Skip download if hashes match
     }
-
-    const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${filePath}`;
-    const response = await axios.get(url, { responseType: 'text' });
-    const dirName = path.join(__dirname, path.dirname(filePath));
-    await ensureDirExists(dirName);
-    // If the file is a JSON file, check if it already exists locally
     if (filePath.endsWith('.json')) {
         const fullPath = path.join(__dirname, filePath);
+        console.log(`Checking if ${filePath} exists locally`);
         if (await fileExists(fullPath)) {
             console.log(`Skipped ${filePath} (already exists locally)`);
             return;
         }
     }
+
+    const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${filePath}`;
+    const response = await axios.get(url, { responseType: 'text' });
+    const dirName = path.join(__dirname, path.dirname(filePath));
+    await ensureDirExists(dirName);
     let data = response.data;
     if (filePath.endsWith('.json')) {
         try {
