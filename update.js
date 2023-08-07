@@ -25,6 +25,15 @@ const ensureDirExists = async (dirPath) => {
     }
 };
 
+const fileExists = async (filePath) => {
+    try {
+        await fs.promises.access(filePath);
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
 const downloadFile = async (filePath, fileSha) => {
     // Check if the local hash matches the remote hash
     let localHashes;
@@ -43,7 +52,14 @@ const downloadFile = async (filePath, fileSha) => {
     const response = await axios.get(url, { responseType: 'text' });
     const dirName = path.join(__dirname, path.dirname(filePath));
     await ensureDirExists(dirName);
-
+    // If the file is a JSON file, check if it already exists locally
+    if (filePath.endsWith('.json')) {
+        const fullPath = path.join(__dirname, filePath);
+        if (await fileExists(fullPath)) {
+            console.log(`Skipped ${filePath} (already exists locally)`);
+            return;
+        }
+    }
     let data = response.data;
     if (filePath.endsWith('.json')) {
         try {
@@ -63,9 +79,9 @@ const downloadFile = async (filePath, fileSha) => {
 };
 
 const processFile = async (file) => {
-    if (file.path.endsWith('.js') || file.path.endsWith('.bat')) {
+    if (file.path.endsWith('.js') || file.path.endsWith('.bat') || file.path.endsWith('.json')) {
         await downloadFile(file.path, file.sha); // Pass the SHA hash
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second to avoid GitHub API rate limit
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Wait 0.1 second to avoid GitHub API rate limit
     }
 };
 

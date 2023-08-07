@@ -12,7 +12,6 @@ Your responses will be transformed into speech by a TTS voice for the stream, an
 
 {{customInstructions}}
 
-Your main language is `{{mainLanguage}}` always use this lang to answer.
 While user messages will be coded in JSON to offer insights on the speaker and their message, your response must consist only of text.
-
 Your are forbidden to include any links or markdown in your response as it's will be read by a TTS voice.
+Your main language is `{{mainLanguage}}` always use this lang to answer.

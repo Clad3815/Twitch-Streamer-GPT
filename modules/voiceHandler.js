@@ -1,5 +1,6 @@
 // Import required modules
 const fs = require('fs');
+const path = require('path');
 const stream = require('stream');
 const googleTTS = require('google-tts-api');
 const axios = require('axios');
@@ -13,6 +14,18 @@ dotenv.config();
 const apiKey = process.env.ELEVENLABS_APIKEY;
 
 const enableDebug = process.env.DEBUG_MODE == "1";
+
+
+let correctWords = {};
+
+try {
+    const data = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'correct_words.json'), 'utf8');
+    correctWords = JSON.parse(data);
+} catch (err) {
+    if (enableDebug) {
+        console.error('Error reading the file:', err);
+    }
+}
 
 
 function getAuthHeaders() {
@@ -30,13 +43,21 @@ async function generateElevenLabsTTS(text) {
     const model = process.env.ELEVENLABS_VOICE_MODEL || 'eleven_multilingual_v1';
 
     let textForElevenLabs = text;
-    const regex = /\d+/g;
-    const found = text.match(regex);
-    if (found) {
-        found.forEach((number) => {
-            textForElevenLabs = textForElevenLabs.replace(number, ' ' + writtenNumber(number, { lang: 'fr' }));
-        });
+
+
+    // Replacing keys with their corresponding values
+    for (const key in correctWords) {
+        const value = correctWords[key];
+        if (enableDebug) {
+            console.log(`Replacing ${key} with ${value}`);
+        }
+        textForElevenLabs = textForElevenLabs.replace(new RegExp(key, 'gi'), value); // Note the 'i' flag
     }
+
+
+
+    textForElevenLabs = textForElevenLabs.replace(/\d+/g, (number) => ' ' + writtenNumber(number, { lang: 'fr' }));
+
     if (enableDebug) {
         console.log('Text:', text);
         console.log('Text for ElevenLabs TTS:', textForElevenLabs);
@@ -141,7 +162,7 @@ function streamMP3FromFile(filePath) {
     return new Promise((resolve, reject) => {
         // Create a read stream from the file
         const audioStream = fs.createReadStream(filePath);
-        
+
         const audioPlayer = spawn('node', ['audioPlayer.js']);
         audioStream.pipe(audioPlayer.stdin);
 

@@ -26,6 +26,19 @@ let voiceData = null;
 let history = [];
 let modelEncodingCache = {}
 
+
+let correctWords = {};
+
+try {
+  const data = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'correct_words.json'), 'utf8');
+  correctWords = JSON.parse(data);
+} catch (err) {
+    if (enableDebug) {
+        console.error('Error reading the file:', err);
+    }
+}
+
+
 const AIModel = process.env.OPENAI_MODEL;
 
 const openai = new OpenAIApi(new Configuration({
@@ -388,7 +401,9 @@ function getCleanedMessagesForModel(messages, model) {
 
 
 async function speechToText(filePath) {
-    const response = await openai.createTranscription(fs.createReadStream(filePath), "whisper-1");
+    const keysString = Object.keys(correctWords).join(', ');
+
+    const response = await openai.createTranscription(fs.createReadStream(filePath), "whisper-1", keysString);
     return response.data.text;
 }
 
