@@ -95,7 +95,7 @@ async function answerToMessage(messageUserName, message, goal = '', isFunctionCa
             "content": JSON.stringify({ "user": messageUserName, "message": message })
         });
     }
-    // console.log(systemPrompt);
+    console.log(systemPrompt);
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
 
     let retries = 0;
@@ -230,7 +230,18 @@ function setStreamInfos(streamData) {
 
 
 function generatePromptFromGoal(goal) {
-    const ttsInfos = voiceData.labels;
+    let ttsInfosData = voiceData.labels;
+    let ttsInfos = {};
+
+    if (ttsInfosData) {
+        ttsInfos = {
+            accent: ttsInfosData.accent,
+            age: ttsInfosData.age,
+            gender: ttsInfosData.gender,
+        };
+
+        
+    }
     const pathToPrompts = path.join(__dirname, '..', 'prompts');
     const systemPrompt = readFileSafely(path.join(pathToPrompts, 'base.txt'));
     let goalPrompt;
