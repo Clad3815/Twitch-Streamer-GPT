@@ -95,7 +95,7 @@ async function answerToMessage(messageUserName, message, goal = '', isFunctionCa
             "content": JSON.stringify({ "user": messageUserName, "message": message })
         });
     }
-    console.log(systemPrompt);
+    // console.log(systemPrompt);
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
 
     let retries = 0;
