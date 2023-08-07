@@ -154,14 +154,14 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
         console.log(textAnswer + "\n");
         console.log("Generating TTS of the message with ElevenLabs API");
         try {
-            // const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
-            // if (gptAnswer.function_call) {
-            //     // Play the TTS
-            //     if (audioStream)   voiceHandler.playBufferingStream(audioStream);
-            // } else { 
-            //     // Play the TTS
-            //     if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
-            // }
+            const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
+            if (gptAnswer.function_call) {
+                // Play the TTS
+                if (audioStream)   voiceHandler.playBufferingStream(audioStream);
+            } else { 
+                // Play the TTS
+                if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
+            }
         } catch (error) {
             if (enableDebug) console.log("Error while generating TTS with ElevenLabs API:", error);
         }

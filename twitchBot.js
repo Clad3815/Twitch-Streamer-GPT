@@ -360,53 +360,6 @@ async function getViewerInfos(viewer_name) {
     }
 }
 
-function test() {
-    // Simulating handleOnSub
-    // handleOnSub({
-    //     broadcasterName: channelName,
-    //     userName: 'MrPoule',
-    // });
-
-    // Simulating handleOnResub
-    // handleOnResub({
-    //     broadcasterName: channelName,
-    //     userName: 'ResubscriberUser',
-    //     months: 5
-    // });
-
-    // // Simulating handleOnSubGift
-    // handleOnSubGift({
-    //     broadcasterName: channelName,
-    //     gifterName: 'MrPoule',
-    //     recipient: 'Dingus',
-    //     totalGiftSubCount: 10
-    // });
-
-    // // Simulating handleOnCommunitySub
-    // handleOnCommunitySub({
-    //     broadcasterName: channelName,
-    //     gifterName: 'MrPoule',
-    //     giftSubCount: 3,
-    //     totalGiftSubCount: 25
-    // });
-
-    // // Simulating handleOnPrimePaidUpgrade
-    handleOnPrimePaidUpgrade({
-        broadcasterName: channelName,
-        userName: 'MrPoule'
-    });
-
-    // // Simulating handleOnGiftPaidUpgrade
-    // handleOnGiftPaidUpgrade({
-    //     broadcasterName: channelName,
-    //     userName: 'GiftedUser',
-    //     gifterDisplayName: 'GenerousGifter'
-    // });
-
-    console.log('Test completed. Check the bot responses.');
-}
-
-
 // Start the Express server
 const port = process.env.PORT_NUMBER || 3000;
 app.listen(port, () => {
