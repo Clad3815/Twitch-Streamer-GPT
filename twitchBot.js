@@ -61,7 +61,7 @@ const bot = new Bot({
 });
 
 const tmiClient = new tmi.Client({
-	options: { debug: true, messagesLogLevel: 'info' },
+	options: { debug: enableDebug, messagesLogLevel: enableDebug ? 'info' : 'error' },
 	connection: {
 		reconnect: true,
 		secure: true
