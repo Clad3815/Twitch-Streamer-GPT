@@ -162,6 +162,26 @@ function streamMP3FromFile(filePath) {
     });
 }
 
+const actionQueue = [];
+let isProcessingQueue = false;
+
+async function processQueue() {
+    if (actionQueue.length === 0 || isProcessingQueue) return;
+    isProcessingQueue = true;
+    while (actionQueue.length > 0) {
+        const { action, resolve } = actionQueue.shift();
+        await action(); // Execute the action
+        resolve(); // Resolve the Promise for this specific action
+    }
+    isProcessingQueue = false;
+}
+
+async function addActionToQueue(action) {
+    return new Promise((resolve) => {
+        actionQueue.push({ action, resolve });
+        processQueue(); // Trigger the queue processing
+    });
+}
 
 
 
@@ -171,5 +191,6 @@ module.exports = {
     getElevenLabsVoices,
     streamMP3FromGoogleTTS,
     streamMP3FromFile,
-    playBufferingStream
+    playBufferingStream,
+    addActionToQueue
 };

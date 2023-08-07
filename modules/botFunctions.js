@@ -67,22 +67,37 @@ function createBotFunctions(broadcasterApiClient, broadcasterId) {
             },
             "function_to_call": async ({ action, poll_id, show_result = true }) => {
                 console.log(`Manage poll: ${action} on poll ID: ${poll_id}`);
+                let choices = [];
+                let returnData;
                 switch (action) {
                     case 'end':
                         const pollEndResult = await broadcasterApiClient.polls.endPoll(broadcasterId, poll_id, show_result);
-                        return `Poll ended successfully. Result: ${JSON.stringify(pollEndResult)}`;
+                        if (!pollEndResult) {
+                            return `Poll with ID ${poll_id} not found.`;
+                        }
+                        choices = [];
+                        for (let i = 0; i < pollEndResult.choices.length; i++) {
+                            choices.push({ title: pollEndResult.choices[i].title, totalVotes: pollEndResult.choices[i].totalVotes });
+                        }
+
+                        returnData = {
+                            status: pollEndResult.status == "ACTIVE" ? "active" : "ended",
+                            title: pollEndResult.title,
+                            choices: choices,
+                        }
+                        return `Poll ended successfully. Result: ${JSON.stringify(returnData)}`;
                     case 'get':
                         const pollInfo = await broadcasterApiClient.polls.getPollById(broadcasterId, poll_id);
                         if (!pollInfo) {
                             return `Poll with ID ${poll_id} not found.`;
                         }
-                        let choices = [];
+                        choices = [];
                         for (let i = 0; i < pollInfo.choices.length; i++) {
                             choices.push({ title: pollInfo.choices[i].title, totalVotes: pollInfo.choices[i].totalVotes });
                         }
 
-                        let returnData = {
-                            status: pollInfo.status,
+                        returnData = {
+                            status: pollInfo.status == "ACTIVE" ? "active" : "ended",
                             title: pollInfo.title,
                             choices: choices,
                         }

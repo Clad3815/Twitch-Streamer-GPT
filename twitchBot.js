@@ -24,7 +24,7 @@ if (enableDebug) {
         console.error(err);
         console.error('Exception origin:', origin);
     });
-    
+
     process.on('unhandledRejection', (reason, promise) => {
         console.error('An unhandled rejection occurred!');
         console.error('Reason:', reason);
@@ -60,65 +60,37 @@ const bot = new Bot({
 
 console.log("Bot started and listening to channel " + channelName);
 
+async function handleTwitchEvent(eventHandler, data) {
+    // Add the action to the queue
+    await voiceHandler.addActionToQueue(() => eventHandler(data));
+}
 
+// Twitch Event Subscriptions
 if (process.env.ENABLE_TWITCH_ONSUB === '1') {
-    bot.onSub(({ broadcasterName, userName }) => {
-        const message = openaiLib.answerToMessage(userName, promptsConfig.onSub, 'onSub');
-        bot.say(channelName, message);
-    });
+    bot.onSub((data) => handleTwitchEvent(handleOnSub, data));
 }
 
 if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
-    bot.onResub(({ broadcasterName, userName, months }) => {
-        const prompt = promptsConfig.onResub.replace('{months}', months);
-        openaiLib.answerToMessage(userName, prompt, 'onResub').then((message) => {
-            bot.say(channelName, message);
-        });
-    });
+    bot.onResub((data) => handleTwitchEvent(handleOnResub, data));
 }
-
 if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
-    bot.onSubGift(({ broadcasterName, gifterName, userName }) => {
-        const previousGiftCount = giftCounts.get(gifterName) ?? 0;
-        if (previousGiftCount > 0) {
-            giftCounts.set(gifterName, previousGiftCount - 1);
-        } else {
-            const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
-            openaiLib.answerToMessage(userName, prompt, 'onSubGift').then((message) => {
-                bot.say(channelName, message);
-            });
-        }
-    });
+    bot.onSubGift((data) => handleTwitchEvent(handleOnSubGift, data));
 }
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
-    bot.onCommunitySub(({ broadcasterName, gifterName }) => {
-        const giftSubCount = 1;
-        const prompt = promptsConfig.onCommunitySub.replace('{count}', giftSubCount);
-        // giftCounts.set(user, previousGiftCount + subInfo.count);
-
-        openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub').then((message) => {
-            bot.say(channelName, message);
-        });
-    });
+    bot.onCommunitySub((data) => handleTwitchEvent(handleOnCommunitySub, data));
 }
 
 if (process.env.ENABLE_TWITCH_ONPRIMEPAIDUPGRADE === '1') {
-    bot.onPrimePaidUpgrade(({ broadcasterName, userName }) => {
-        openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
-            bot.say(channelName, message);
-        });
-    });
+    bot.onPrimePaidUpgrade((data) => handleTwitchEvent(handleOnPrimePaidUpgrade, data));
 }
 
 if (process.env.ENABLE_TWITCH_ONGIFTPAIDUPGRADE === '1') {
-    bot.onGiftPaidUpgrade(({ broadcasterName, userName, gifterDisplayName }) => {
-        const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
-        openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade').then((message) => {
-            bot.say(channelName, message);
-        });
-    });
+    bot.onGiftPaidUpgrade((data) => handleTwitchEvent(handleOnGiftPaidUpgrade, data));
 }
+
+
+// Add other event subscriptions as needed
 
 function readRandomWaitMP3() {
     const mp3Files = fs.readdirSync(path.join(__dirname, 'wait_mp3'));
@@ -128,14 +100,65 @@ function readRandomWaitMP3() {
 }
 
 
+// Event Handling Functions
+async function handleOnSub({ broadcasterName, userName }) {
+    openaiLib.answerToMessage(userName, promptsConfig.onSub, 'onSub').then((message) => {
+        bot.say(channelName, message);
+    });
+}
+
+async function handleOnResub({ broadcasterName, userName, months }) {
+    const prompt = promptsConfig.onResub.replace('{months}', months);
+    openaiLib.answerToMessage(userName, prompt, 'onResub').then((message) => {
+        bot.say(channelName, message);
+    });
+}
+
+async function handleOnSubGift({ broadcasterName, gifterName, userName }) {
+    const previousGiftCount = giftCounts.get(gifterName) ?? 0;
+    if (previousGiftCount > 0) {
+        giftCounts.set(gifterName, previousGiftCount - 1);
+    } else {
+        const prompt = promptsConfig.onSubGift.replace('{gifterName}', gifterName);
+        openaiLib.answerToMessage(userName, prompt, 'onSubGift').then((message) => {
+            bot.say(channelName, message);
+        });
+    }
+}
+
+async function handleOnCommunitySub({ broadcasterName, gifterName }) {
+    const giftSubCount = 1;
+    const prompt = promptsConfig.onCommunitySub.replace('{count}', giftSubCount);
+    openaiLib.answerToMessage(gifterName, prompt, 'onCommunitySub').then((message) => {
+        bot.say(channelName, message);
+    });
+}
+
+async function handleOnPrimePaidUpgrade({ broadcasterName, userName }) {
+    openaiLib.answerToMessage(userName, promptsConfig.onPrimePaidUpgrade, 'onPrimePaidUpgrade').then((message) => {
+        bot.say(channelName, message);
+    });
+}
+
+async function handleOnGiftPaidUpgrade({ broadcasterName, userName, gifterDisplayName }) {
+    const prompt = promptsConfig.onGiftPaidUpgrade.replace('{gifterDisplayName}', gifterDisplayName);
+    openaiLib.answerToMessage(userName, prompt, 'onGiftPaidUpgrade').then((message) => {
+        bot.say(channelName, message);
+    });
+}
+
 async function main() {
     // Check OpenAI model availability
     try {
         await openaiLib.openai.retrieveModel(process.env.OPENAI_MODEL);
         console.log(`Using OpenAI model ${process.env.OPENAI_MODEL}.`);
     } catch (error) {
-        console.log(`The model ${process.env.OPENAI_MODEL} is not available.`);
-        process.exit(1);
+        if (process.env.OPENAI_BASEPATH.startsWith('https://api.openai.com')) {
+            console.log(`The model ${process.env.OPENAI_MODEL} is not available.`);
+            process.exit(1);
+        } else {
+            console.log(`Using OpenAI model ${process.env.OPENAI_MODEL}.`);
+        }
     }
 
     let streamInfos = {};
@@ -151,41 +174,56 @@ async function main() {
 
     if (process.env.ENABLE_TWITCH_ONREDEMPTION === '1') {
         pubSubClient.onRedemption(user.id, async (message) => {
-            console.log(`${message.userDisplayName} just redeemed ${message.rewardTitle}!`);
-            if (redemptionTrigger == message.rewardTitle) {
-                console.log(`Message: ${message.message}`);
-                if (!await openaiLib.analyseMessage(message.message)) {
-                    bot.say(channelName, promptsConfig.warningMessage);
-                    return;
+            const redemptionAction = async () => {
+                console.log(`${message.userDisplayName} just redeemed ${message.rewardTitle}!`);
+                if (redemptionTrigger == message.rewardTitle) {
+                    console.log(`Message: ${message.message}`);
+                    if (!await openaiLib.analyseMessage(message.message)) {
+                        bot.say(channelName, promptsConfig.warningMessage);
+                        return;
+                    }
+                    const enableGoogleTTS = process.env.READ_CHANNEL_POINT_REDEMPTIONS === '1';
+                    if (enableGoogleTTS) {
+                        console.log("Generating TTS of the message");
+                        const ttsPrompt = promptsConfig.ttsMessage.replace('{userDisplayName}', message.userDisplayName).replace('{message}', message.message);
+                        const audioStream = await voiceHandler.streamMP3FromGoogleTTS(ttsPrompt);
+                        await voiceHandler.playBufferingStream(audioStream);
+                        await new Promise(r => setTimeout(r, 1000));
+                        console.log("Play random wait mp3");
+                        readRandomWaitMP3();
+                    }
+                    const answerMessage = await openaiLib.answerToMessage(message.userDisplayName, message.message);
+                    bot.say(channelName, answerMessage);
                 }
-                console.log("Generating TTS of the message");
-                const ttsPrompt = promptsConfig.ttsMessage.replace('{userDisplayName}', message.userDisplayName).replace('{message}', message.message);
-                const audioStream = await voiceHandler.streamMP3FromGoogleTTS(ttsPrompt);
-                await voiceHandler.playBufferingStream(audioStream);
-                await new Promise(r => setTimeout(r, 1000));
-                console.log("Play random wait mp3");
-                readRandomWaitMP3();
-                const answerMessage = await openaiLib.answerToMessage(message.userDisplayName, message.message);
-                bot.say(channelName, answerMessage);
-            }
+            };
+
+            // Add the action to the queue
+            await voiceHandler.addActionToQueue(redemptionAction);
+
+
         });
     }
     if (process.env.ENABLE_TWITCH_ONBITS === '1') {
         pubSubClient.onBits(user.id, async (message) => {
-            const minBits = process.env.TWITCH_MIN_BITS ? parseInt(process.env.TWITCH_MIN_BITS) : 0;
-            if (message.bits >= minBits) {
-                const prompt = promptsConfig.onBits
-                  .replace('{bits}', message.bits)
-                  .replace('{totalBits}', message.totalBits)
-                  .replace('{message}', message.message);
-                  
-                if (!await openaiLib.analyseMessage(prompt)) {
-                    bot.say(channelName, promptsConfig.warningMessage);
-                    return;
+            const bitsAction = async () => {
+                const minBits = process.env.TWITCH_MIN_BITS ? parseInt(process.env.TWITCH_MIN_BITS) : 0;
+                if (message.bits >= minBits) {
+                    const prompt = promptsConfig.onBits
+                        .replace('{bits}', message.bits)
+                        .replace('{totalBits}', message.totalBits)
+                        .replace('{message}', message.message);
+
+                    if (!await openaiLib.analyseMessage(prompt)) {
+                        bot.say(channelName, promptsConfig.warningMessage);
+                        return;
+                    }
+                    const answerMessage = await openaiLib.answerToMessage(message.userName, prompt, 'onBits');
+                    bot.say(channelName, answerMessage);
                 }
-                const answerMessage = await openaiLib.answerToMessage(message.userName, prompt, 'onBits');
-                bot.say(channelName, answerMessage);
-            }
+            };
+
+            // Add the action to the queue
+            await voiceHandler.addActionToQueue(bitsAction);
         });
     }
 
@@ -222,11 +260,15 @@ async function main() {
 app.post('/transcription', async (req, res) => {
     const transcription = req.body.transcription;
 
-    readRandomWaitMP3();
-    openaiLib.answerToMessage(channelName, transcription).then((answerMessage) => {
-        bot.say(channelName, answerMessage);
-    });
+    const onTranscriptionAction = async () => {
+        readRandomWaitMP3();
+        openaiLib.answerToMessage(channelName, transcription).then((answerMessage) => {
+            bot.say(channelName, answerMessage);
+        });
+    };
 
+    // Add the action to the queue
+    voiceHandler.addActionToQueue(onTranscriptionAction);
     res.sendStatus(200);
 });
 

@@ -70,7 +70,6 @@ function loadHistory() {
 }
 
 async function analyseMessage(text) {
-    // Vérifier le message en utilisant l'API de modération d'OpenAI
     const response = await openai.createModeration({
         input: text,
     });
@@ -80,8 +79,6 @@ async function analyseMessage(text) {
     }
     return true;
 }
-
-
 
 async function answerToMessage(messageUserName, message, goal = 'answerToMessage', isFunctionCall = false) {
     let systemPrompt = generatePromptFromGoal(goal);
@@ -98,6 +95,7 @@ async function answerToMessage(messageUserName, message, goal = 'answerToMessage
             "content": JSON.stringify({ "user": messageUserName, "message": message })
         });
     }
+    console.log(systemPrompt);
     const gptMessages = [{ "role": "system", "content": systemPrompt }, ...history];
 
     let retries = 0;
@@ -244,17 +242,19 @@ function generatePromptFromGoal(goal) {
 
     let ttsInfosText = "";
     if (ttsInfos) {
-        ttsInfosText = `\n\nTTS Infos:\n${JSON.stringify(ttsInfos, null, 2)}\nPay attention to the gender and other characteristics of the voice, and try to craft your responses accordingly.\n`;
-        if (ttsInfos.gender == "female") {
-            ttsInfosText += "\nUse feminine forms of nouns, pronouns, and adjectives in your responses to align with the female voice.\n";
-        }
+        ttsInfosText = `\n\nTTS Infos:\n${JSON.stringify(ttsInfos, null, 2)}\nPay attention to the gender and other characteristics of the voice, and try to craft your responses accordingly. For example if the TTS gender is female you have to write/acting like a female\n`;
     }
+    const charLimit = process.env.OPENAI_MAX_CARACTERS_INSTRUCTIONS || 100;
+    const wordLimitNotice = `IMPORTANT: The TTS service is not free. Keep your answer within ${charLimit} characters at the most.`;
 
-
+    let streamerGenderInfos = "";
+    if (process.env.STREAMER_GENDER && process.env.STREAMER_GENDER.length > 0) {
+        streamerGenderInfos = `\nThe streamer identifies as ${process.env.STREAMER_GENDER}. When referring to or addressing the streamer, please use ${process.env.STREAMER_GENDER} forms of nouns, pronouns, and adjectives.`;
+    }
     const replaceObj = {
         '{{botUsername}}': botUsername,
         '{{channelName}}': channelName,
-        '{{streamInfos}}': JSON.stringify(streamInfos, null, 2),
+        '{{streamInfos}}': JSON.stringify(streamInfos, null, 2) + streamerGenderInfos,
         '{{ttsInfos}}': ttsInfosText,
         '{{goalPrompt}}': goalPrompt,
         '{{customInstructions}}': customInstructionsText,
@@ -264,7 +264,7 @@ function generatePromptFromGoal(goal) {
     const formattedSystemPrompt = Object.keys(replaceObj).reduce((str, key) => str.replace(new RegExp(key, 'g'), replaceObj[key]), systemPrompt);
     
     const currentDateTime = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
-    return `Current datetime: ${currentDateTime}\n${formattedSystemPrompt}`;
+    return `Current datetime: ${currentDateTime}\n${formattedSystemPrompt}\n${wordLimitNotice}`;
 }
 
 

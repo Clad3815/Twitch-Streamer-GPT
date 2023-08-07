@@ -1,4 +1,3 @@
-// Import required modules
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -12,30 +11,22 @@ const axios = require('axios');
 
 dotenv.config();
 
-let VAD, vad;
 const USE_NODE_VAD = process.env.USE_NODE_VAD === '1';
 const enableDebug = process.env.DEBUG_MODE === '1';
+const channelName = process.env.TWITCH_CHANNEL_NAME;
+const portNumber = process.env.PORT_NUMBER;
 
+let VAD, vad;
 if (USE_NODE_VAD) {
     VAD = require('node-vad');
     vad = new VAD(VAD.Mode.NORMAL);
 }
 
+// Error Handling
 if (enableDebug) {
-    process.on('uncaughtException', (err, origin) => {
-        console.error('An uncaught exception occurred!');
-        console.error(err);
-        console.error('Exception origin:', origin);
-    });
-    
-    process.on('unhandledRejection', (reason, promise) => {
-        console.error('An unhandled rejection occurred!');
-        console.error('Reason:', reason);
-        console.error('Promise:', promise);
-    });
+    process.on('uncaughtException', handleUncaughtException);
+    process.on('unhandledRejection', handleUnhandledRejection);
 }
-
-
 
 let MICROPHONE_DEVICE = -1;
 const CONFIG_FILE = './config.json';
@@ -45,18 +36,25 @@ const MAX_SILENCE_FRAMES = 48;
 let recorder;
 let recordingFrames = [];
 let isRecording = false;
-
 let showChooseMic = true;
 let porcupineHandle;
-const channelName = process.env.TWITCH_CHANNEL_NAME;
-const portNumber = process.env.PORT_NUMBER;
+let isListening = true;
 
+function handleUncaughtException(err, origin) {
+    console.error('An uncaught exception occurred!');
+    console.error(err);
+    console.error('Exception origin:', origin);
+}
 
+function handleUnhandledRejection(reason, promise) {
+    console.error('An unhandled rejection occurred!');
+    console.error('Reason:', reason);
+    console.error('Promise:', promise);
+}
 
-function pressAnyKeyToContinue() {
+async function pressAnyKeyToContinue() {
     return new Promise((resolve) => {
         console.log("Please turn on microphone. Press any key to start 5 seconds of silence for calibration...");
-
         readline.emitKeypressEvents(process.stdin);
         process.stdin.setRawMode(true);
         process.stdin.once('keypress', (str, key) => {
@@ -66,84 +64,87 @@ function pressAnyKeyToContinue() {
     });
 }
 
-async function readRandomWakeWordAnswerMP3() {
-    const mp3Files = fs.readdirSync(path.join(__dirname, 'wake_word_answer'));
+function readRandomMP3(directory) {
+    const mp3Files = fs.readdirSync(directory);
     const randomMP3 = mp3Files[Math.floor(Math.random() * mp3Files.length)];
-    console.log("Playing wake word answer: " + path.join(__dirname, 'wake_word_answer', randomMP3));
-    return await voiceHandler.streamMP3FromFile(path.join(__dirname, 'wake_word_answer', randomMP3));
+    console.log(`Playing from ${directory}: ${randomMP3}`);
+    return voiceHandler.streamMP3FromFile(path.join(directory, randomMP3));
 }
 
+function readRandomWakeWordAnswerMP3() {
+    return readRandomMP3(path.join(__dirname, 'wake_word_answer'));
+}
 
 async function calibrate() {
     console.log("Calibrating...");
 
     let framesArray = [];
-    let calibrationDuration = 5000; // calibrate for 5 seconds
-    let startTime = Date.now();
+    const calibrationDuration = 5000; // 5 seconds
+    const startTime = Date.now();
 
-    while (Date.now() - startTime < calibrationDuration) {
-        const frames = await recorder.read();
-        framesArray.push(...frames);
+    try {
+        while (Date.now() - startTime < calibrationDuration) {
+            const frames = await recorder.read();
+            framesArray.push(...frames);
+        }
+        const average = framesArray.reduce((a, b) => a + Math.abs(b), 0) / framesArray.length;
+        SILENCE_THRESHOLD = average * 1.5;
+        console.log(`Calibration completed. SILENCE_THRESHOLD set to ${SILENCE_THRESHOLD}`);
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify({ MICROPHONE_DEVICE, SILENCE_THRESHOLD }));
+    } catch (error) {
+        console.error(`Error during calibration: ${error}`);
     }
-
-    let sum = framesArray.reduce((a, b) => a + Math.abs(b), 0);
-    let average = sum / framesArray.length;
-
-    // Set SILENCE_THRESHOLD to be some percentage (e.g. 150%) above average
-    SILENCE_THRESHOLD = average * 1.5;
-
-    console.log(`Calibration completed. SILENCE_THRESHOLD set to ${SILENCE_THRESHOLD}`);
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ 
-        MICROPHONE_DEVICE,
-        SILENCE_THRESHOLD
-     }));
 }
 
-
 function loadWakeWord() {
-    const directoryPath = path.resolve(__dirname, 'wake_word');
-    let files = fs.readdirSync(directoryPath);
-    let modelFile = files.find(file => file.startsWith('porcupine_params_') && file.endsWith('.pv'));
-    let keywordFiles = files.filter(file => file.endsWith('.ppn'));
-    if (!modelFile) {
-        throw new Error("No matching file found");
+    try {
+        const directoryPath = path.resolve(__dirname, 'wake_word');
+        let files = fs.readdirSync(directoryPath);
+        let modelFile = files.find(file => file.startsWith('porcupine_params_') && file.endsWith('.pv'));
+        let keywordFiles = files.filter(file => file.endsWith('.ppn'));
+
+        if (!modelFile) throw new Error("No model file found");
+        if (!keywordFiles.length) throw new Error('No .ppn files found');
+
+        let keywordPaths = keywordFiles.map(file => path.resolve(directoryPath, file));
+        const MY_MODEL_PATH = path.resolve(directoryPath, modelFile);
+        porcupineHandle = new Porcupine(process.env.PORCUPINE_API_KEY, keywordPaths, new Array(keywordPaths.length).fill(0.5), MY_MODEL_PATH);
+
+        console.log("Wake word loaded");
+    } catch (error) {
+        console.error(`Error loading wake word: ${error}`);
     }
-    if (keywordFiles.length === 0) {
-        throw new Error('No .ppn files found');
-    }
-    let keywordPaths = keywordFiles.map(file => path.resolve(directoryPath, file));
-    const MY_MODEL_PATH = path.resolve(__dirname, 'wake_word', modelFile);
-    porcupineHandle = new Porcupine(process.env.PORCUPINE_API_KEY, keywordPaths, new Array(keywordPaths.length).fill(0.5), MY_MODEL_PATH);
-    console.log("Wake word loaded");
 }
 
 function saveRecording() {
-    let waveFile = new WaveFile();
-    if (fs.existsSync("recording.wav")) {
-        fs.unlinkSync("recording.wav");
+    try {
+        let waveFile = new WaveFile();
+        if (fs.existsSync("recording.wav")) {
+            fs.unlinkSync("recording.wav");
+        }
+        const audioData = new Int16Array(recordingFrames.length * porcupineHandle.frameLength);
+        for (let i = 0; i < recordingFrames.length; i++) {
+            audioData.set(recordingFrames[i], i * porcupineHandle.frameLength);
+        }
+        waveFile.fromScratch(1, recorder.sampleRate, '16', audioData);
+        fs.writeFileSync("recording.wav", waveFile.toBuffer());
+        console.log('Recording saved to recording.wav file');
+    } catch (error) {
+        console.error(`Error saving recording: ${error}`);
     }
-
-    const audioData = new Int16Array(recordingFrames.length * porcupineHandle.frameLength);
-    for (let i = 0; i < recordingFrames.length; i++) {
-        audioData.set(recordingFrames[i], i * porcupineHandle.frameLength);
-    }
-
-    waveFile.fromScratch(1, recorder.sampleRate, '16', audioData);
-    fs.writeFileSync("recording.wav", waveFile.toBuffer());
-
-    console.log('Recording saved to recording.wav file');
 }
 
 async function transcriptRecording() {
-    console.log("Transcripting recording");
-    const result = await openaiLib.speechToText("recording.wav");
-    console.log("Detected sentence: " + result);
-    console.log("Transcripting recording done");
-    return result;
+    try {
+        console.log("Transcripting recording");
+        const result = await openaiLib.speechToText("recording.wav");
+        console.log("Detected sentence: " + result);
+        console.log("Transcripting recording done");
+        return result;
+    } catch (error) {
+        console.error(`Error during transcription: ${error}`);
+    }
 }
-
-
-let isListening = true;
 
 async function startListening() {
     console.log("Start listening");
@@ -153,52 +154,20 @@ async function startListening() {
         const frames = await recorder.read();
 
         if (isRecording) {
-            const framesBuffer = Buffer.from(frames);
             recordingFrames.push(frames);
 
-            if (USE_NODE_VAD) {
-                // Use node-vad
-                const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
-                switch (res) {
-                    case VAD.Event.ERROR:
-                        console.log("VAD error");
-                        break;
-                    case VAD.Event.NOISE:
-                        // Not silence
-                        silenceFramesCount = 0;
-                        break;
-                    case VAD.Event.SILENCE:
-                        // Silence detected
-                        silenceFramesCount++;
-                        if (silenceFramesCount > MAX_SILENCE_FRAMES) {
-                            isRecording = false;
-                            silenceFramesCount = 0;
-                            saveRecording();
-                            const result = await transcriptRecording();
-                            await axios.post(`http://localhost:${portNumber}/transcription`, { transcription: result });
-                        }
-                        break;
-                    case VAD.Event.VOICE:
-                        // Voice detected
-                        silenceFramesCount = 0;
-                        break;
+            const isSilence = await handleSilenceDetection(frames);
+            if (isSilence) {
+                silenceFramesCount++;
+                if (silenceFramesCount > MAX_SILENCE_FRAMES) {
+                    isRecording = false;
+                    silenceFramesCount = 0;
+                    saveRecording();
+                    const result = await transcriptRecording();
+                    await axios.post(`http://localhost:${portNumber}/transcription`, { transcription: result });
                 }
             } else {
-                // Use SILENCE_THRESHOLD
-                let isSilence = frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;
-                if (isSilence) {
-                    silenceFramesCount++;
-                    if (silenceFramesCount > MAX_SILENCE_FRAMES) {
-                        isRecording = false;
-                        silenceFramesCount = 0;
-                        saveRecording();
-                        const result = await transcriptRecording();
-                        
-                        await axios.post(`http://localhost:${portNumber}/transcription`, { transcription: result });
-                    }
-                } else {
-                    silenceFramesCount = 0;
-                }
+                silenceFramesCount = 0;
             }
         } else {
             const index = porcupineHandle.process(frames);
@@ -213,60 +182,41 @@ async function startListening() {
     console.log("Loop ended");
 }
 
-
-
-
-
-// Function to initialize the voice handling script
+async function handleSilenceDetection(frames) {
+    if (USE_NODE_VAD) {
+        const framesBuffer = Buffer.from(frames);
+        const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
+        return res === VAD.Event.SILENCE;
+    } else {
+        return frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;
+    }
+}
 
 function saveMicrophoneInput(deviceId) {
     MICROPHONE_DEVICE = deviceId;
-    const config = {
-        MICROPHONE_DEVICE,
-        SILENCE_THRESHOLD
-    };
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config));
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ MICROPHONE_DEVICE, SILENCE_THRESHOLD }));
     console.log(`Microphone input saved: ${deviceId}`);
 }
 
 function readConfig() {
     if (fs.existsSync(CONFIG_FILE)) {
         const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-        if (config.MICROPHONE_DEVICE) {
-            MICROPHONE_DEVICE = config.MICROPHONE_DEVICE;
-        }
-        if (config.SILENCE_THRESHOLD >= 0) {
-            SILENCE_THRESHOLD = config.SILENCE_THRESHOLD;
-        }
+        MICROPHONE_DEVICE = config.MICROPHONE_DEVICE || MICROPHONE_DEVICE;
+        SILENCE_THRESHOLD = config.SILENCE_THRESHOLD || SILENCE_THRESHOLD;
     }
 }
 
-
 function initMicrophone() {
-    if (showChooseMic) {
-        console.log(`Using microphone device: ${recorder.getSelectedDevice()} | Wrong device? Run \`npm run choose-mic\` to select the correct input.`)
-    } else {
-        console.log(`Using microphone device: ${recorder.getSelectedDevice()}`);
-    }
-
-
+    console.log(`Using microphone device: ${recorder.getSelectedDevice()} | Wrong device? Run \`npm run choose-mic\` to select the correct input.`);
     recorder.start();
     if (USE_NODE_VAD) {
         startListening();
     } else {
-        let force = false;
-        if (process.argv.includes('--calibrate')) {
-            force = true;
-        }
-        if (!force && SILENCE_THRESHOLD >= 0) {
-            console.log(`Configuration loaded. SILENCE_THRESHOLD is ${SILENCE_THRESHOLD} | Run \`npm run calibrate\` to recalibrate.`);
-            startListening();
-        } else {
-            pressAnyKeyToContinue().then(calibrate).then(startListening);
-        }
+        pressAnyKeyToContinue()
+            .then(calibrate)
+            .then(startListening);
     }
 }
-
 
 async function chooseMicrophone() {
     const rl = readline.createInterface({
@@ -284,17 +234,10 @@ async function chooseMicrophone() {
         rl.close();
         showChooseMic = false;
         saveMicrophoneInput(parseInt(deviceId));
-        
-        // Exit the process and ask the user to restart the script
         console.log('Please restart the script to use the new microphone input');
         process.exit(0);
-
-
-        // recorder = new PvRecorder(porcupineHandle.frameLength, MICROPHONE_DEVICE);
-        // initMicrophone();
     });
 }
-
 
 async function initialize() {
     readConfig();
@@ -310,5 +253,3 @@ async function initialize() {
 }
 
 initialize().catch(error => console.error(`Failed to initialize: ${error}`));
-
-
