@@ -61,7 +61,7 @@ const bot = new Bot({
 });
 
 const tmiClient = new tmi.Client({
-	options: { debug: enableDebug, messagesLogLevel: enableDebug ? 'info' : 'error' },
+	options: { debug: enableDebug },
 	connection: {
 		reconnect: true,
 		secure: true
@@ -298,13 +298,6 @@ async function main() {
 
     
     await tmiClient.connect().catch(console.error);
-
-    
-    // Call the test function to run the tests
-    test();
-
-
-
 }
 
 // Endpoint to receive transcriptions from the voice input script
