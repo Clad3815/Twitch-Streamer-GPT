@@ -80,7 +80,7 @@ async function analyseMessage(text) {
     return true;
 }
 
-async function answerToMessage(messageUserName, message, goal = 'answerToMessage', isFunctionCall = false) {
+async function answerToMessage(messageUserName, message, goal = '', isFunctionCall = false) {
     let systemPrompt = generatePromptFromGoal(goal);
     let canUseFunctions = false;
     if (messageUserName == channelName) {
@@ -233,7 +233,12 @@ function generatePromptFromGoal(goal) {
     const ttsInfos = voiceData.labels;
     const pathToPrompts = path.join(__dirname, '..', 'prompts');
     const systemPrompt = readFileSafely(path.join(pathToPrompts, 'base.txt'));
-    const goalPrompt = readFileSafely(path.join(pathToPrompts, `${goal}.txt`), "");
+    let goalPrompt;
+    if (!goal) {
+        goalPrompt = "";
+    } else {
+        goalPrompt = readFileSafely(path.join(pathToPrompts, `${goal}.txt`), "");
+    }
     const customInstructions = readFileSafely(path.join(pathToPrompts, 'custom_instructions.txt'));
     let customInstructionsText = "";
     if (customInstructions) {
