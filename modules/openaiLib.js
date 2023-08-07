@@ -233,7 +233,7 @@ function generatePromptFromGoal(goal) {
     const ttsInfos = voiceData.labels;
     const pathToPrompts = path.join(__dirname, '..', 'prompts');
     const systemPrompt = readFileSafely(path.join(pathToPrompts, 'base.txt'));
-    const goalPrompt = readFileSafely(path.join(pathToPrompts, `${goal}.txt`), "Goal not found");
+    const goalPrompt = readFileSafely(path.join(pathToPrompts, `${goal}.txt`), "");
     const customInstructions = readFileSafely(path.join(pathToPrompts, 'custom_instructions.txt'));
     let customInstructionsText = "";
     if (customInstructions) {
