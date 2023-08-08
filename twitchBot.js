@@ -90,12 +90,12 @@ if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     });
 }
 
-if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
-    tmiClient.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
-        let senderCount = ~~userstate["msg-param-sender-count"];
-        handleTwitchEvent(handleOnSubGift, { broadcasterName: channel, gifterName: username, recipient: recipient, totalGiftSubCount: senderCount });
-    });
-}
+// if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
+//     tmiClient.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
+//         let senderCount = ~~userstate["msg-param-sender-count"];
+//         handleTwitchEvent(handleOnSubGift, { broadcasterName: channel, gifterName: username, recipient: recipient, totalGiftSubCount: senderCount });
+//     });
+// }
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
     tmiClient.on("submysterygift", (channel, username, numbOfSubs, methods, userstate) => {
