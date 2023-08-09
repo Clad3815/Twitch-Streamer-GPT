@@ -249,8 +249,10 @@ async function main() {
                 const minBits = process.env.TWITCH_MIN_BITS ? parseInt(process.env.TWITCH_MIN_BITS) : 0;
                 if (message.bits >= minBits) {
                     const prompt = promptsConfig.onBits
+                        .replace('{userName}', message.userName)
                         .replace('{bits}', message.bits)
                         .replace('{totalBits}', message.totalBits)
+                        .replace('{broadcasterName}', channelName)
                         .replace('{message}', message.message);
 
                     if (!await openaiLib.analyseMessage(prompt)) {
@@ -258,7 +260,10 @@ async function main() {
                         return;
                     }
                     
-                    const userData = await getViewerInfos(message.userName);
+                    
+                    const userData = {
+                        name: "system"
+                    };
                     const answerMessage = await openaiLib.answerToMessage(userData, prompt);
                     bot.say(channelName, answerMessage);
                 }
