@@ -113,11 +113,13 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
     let retriesMax = 3;
     let result = null;
 
-    let functions = botFunctions.map((botFunction) => {
+    let functions = botFunctions.filter((botFunction) => {
+        return userData.isBroadcaster || !botFunction.onlyBroadcaster;
+    }).map((botFunction) => {
         return botFunction.gptFunction;
-    }).filter((gptFunction) => {
-        return userData.isBroadcaster || !gptFunction.onlyBroadcaster;
     });
+    
+    
     while (result == null && retries < retriesMax) {
         try {
             const { model: modelToUse, messages: messagesToUse } = getCleanedMessagesForModel(gptMessages, AIModel);
