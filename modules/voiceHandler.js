@@ -187,7 +187,7 @@ const actionQueue = [];
 let isProcessingQueue = false;
 
 async function processQueue() {
-    if (actionQueue.length === 0 || isProcessingQueue) return;
+    if (isProcessingQueue) return;
     isProcessingQueue = true;
     while (actionQueue.length > 0) {
         const { action, resolve } = actionQueue.shift();
@@ -198,11 +198,19 @@ async function processQueue() {
 }
 
 async function addActionToQueue(action) {
-    return new Promise((resolve) => {
+    // Wrap the action addition in a Promise
+    const actionAdded = new Promise((resolve) => {
+        // Push the action to the queue
         actionQueue.push({ action, resolve });
-        processQueue(); // Trigger the queue processing
     });
+
+    // Trigger the queue processing
+    processQueue();
+
+    // Wait for the action to be added to the queue
+    await actionAdded;
 }
+
 
 
 

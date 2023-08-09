@@ -112,12 +112,25 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
     let retries = 0;
     let retriesMax = 3;
     let result = null;
-
+    if (enableDebug) {
+        console.log("Debug: Initial botFunctions:", botFunctions);
+        console.log("Debug: userData.isBroadcaster:", userData.isBroadcaster);
+    }
+    
     let functions = botFunctions.filter((botFunction) => {
-        return userData.isBroadcaster || !botFunction.onlyBroadcaster;
+        let isAllowed = (userData.isBroadcaster === true) || !botFunction.onlyBroadcaster;
+        if (enableDebug) {
+            console.log(`Debug: Checking function '${botFunction.name}' (onlyBroadcaster=${botFunction.onlyBroadcaster}): isAllowed=${isAllowed}`);
+        }
+        return isAllowed;
     }).map((botFunction) => {
         return botFunction.gptFunction;
     });
+    if (enableDebug) {
+        console.log("Debug: Filtered functions:", functions);
+    }
+    
+    
     
     
     while (result == null && retries < retriesMax) {
@@ -169,7 +182,7 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
         }
     }
     if (gptAnswer.function_call) {
-        const functionCall = await handleFunctionCall(gptAnswer.function_call);
+        const functionCall = await handleFunctionCall(gptAnswer.function_call, userData.isBroadcaster);
         history.push(functionCall);
         return await answerToMessage(userData, message, true);
     }
@@ -179,13 +192,20 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
 }
 
 
-
-// Functions
-async function handleFunctionCall(functionCall) {
+async function handleFunctionCall(functionCall, isBroadcaster = false) {
     // Finding the corresponding function from botFunctions
     const botFunction = botFunctions.find(f => f.gptFunction.name === functionCall.name);
     // If the function is found, call it with the provided arguments
     if (botFunction) {
+        if (botFunction.onlyBroadcaster && isBroadcaster !== true) {
+            console.warn(`Function ${functionCall.name} is restricted to broadcaster only.`);
+            return {
+                role: 'function',
+                name: functionCall.name,
+                content: 'Function restricted to broadcaster only'
+            };
+        }
+
         let { name, arguments: args } = functionCall;
         let argsFixed;
         try {
@@ -197,7 +217,6 @@ async function handleFunctionCall(functionCall) {
                 argsFixed = args;
             }
         }
-
 
         try {
             const result = await botFunction.function_to_call(argsFixed);
@@ -226,7 +245,6 @@ async function handleFunctionCall(functionCall) {
         };
     }
 }
-
 
 const readFileSafely = (filePath, defaultValue = "") => {
     try {
