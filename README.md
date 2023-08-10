@@ -10,138 +10,50 @@ For the `.env` file, you will need to add the missing variables. You can find th
 
 ---
 
-# Twitch Streamer GPT - Reinventing Twitch Streams
+# Twitch Streamer GPT - Revolutionize Your Twitch Streams 🚀
 
-Bring a new level of engagement and enjoyability to your Twitch streams with our innovative Twitch Streamer GPT application. This NodeJS-based solution integrates advanced technology, including OpenAI, Twurple, Easy-Bot, and more, to create a more interactive and enjoyable viewing experience for your Twitch audience.
+Welcome to **Twitch Streamer GPT**! This amazing tool brings a whole new level of interactivity and enjoyment to your Twitch streams. Whether you're tech-savvy or a complete beginner, you can easily set it up and start having fun. Here's what's inside:
 
-The tool is user-friendly and accessible to users of varying technical aptitude. Complete set-up with ease, regardless of your coding experience, by following our straightforward guide. Add a unique touch to your Twitch streams and keep your audience eagerly waiting for your next broadcast!
+## Table of Contents 📑
 
-This project is inspired by the impressive work of [AIAssistantStreamer](https://github.com/anisayari/AIAssistantStreamer/) by [Defend Intelligence](https://www.youtube.com/c/DefendIntelligence-tech).
-
-
-## Table of Contents
-
-- [Twitch Streamer GPT - Reinventing Twitch Streams](#twitch-streamer-gpt---reinventing-twitch-streams)
-  - [Table of Contents](#table-of-contents)
-  - [Information](#information)
-  - [Getting Started](#getting-started)
-  - [Features](#features)
-  - [Integration with OpenAI / GPT-3.5 Turbo or GPT-4](#integration-with-openai--gpt-35-turbo-or-gpt-4)
-    - [Personalized Responses](#personalized-responses)
-  - [What's New \& Exciting](#whats-new--exciting)
-      - [Text-to-Speech Announcements](#text-to-speech-announcements)
-      - [Point Redemptions \& Cheering Reactions](#point-redemptions--cheering-reactions)
-      - [Voice Command Activation](#voice-command-activation)
-      - [Regular Calibration and Updates](#regular-calibration-and-updates)
-  - [Setup Tutorial](#setup-tutorial)
-    - [Step 1: Customizing Wake Word](#step-1-customizing-wake-word)
-    - [Step 2: Configuring MP3 Responses](#step-2-configuring-mp3-responses)
-    - [Step 3: Tweaking Environment Variables](#step-3-tweaking-environment-variables)
-  - [Twitch Bot and Broadcaster Scopes](#twitch-bot-and-broadcaster-scopes)
-    - [For Bot:](#for-bot)
-    - [For Broadcaster:](#for-broadcaster)
-  - [Essential Environment Variables](#essential-environment-variables)
-    - [OpenAI](#openai)
-    - [Porcupine](#porcupine)
-    - [ElevenLabs](#elevenlabs)
-    - [Twitch Bot](#twitch-bot)
-    - [Twitch Broadcaster](#twitch-broadcaster)
-    - [Twitch Events](#twitch-events)
-  - [Conclusion and Support](#conclusion-and-support)
+- [What Can It Do?](#what-can-it-do-)
+- [Get Started - It's Easy!](#get-started---its-easy-)
+  * [Step 1: Install Required Software](#step-1--install-required-software)
+  * [Step 2: Download the Bot](#step-2--download-the-bot)
+  * [Step 3: Customize the Bot](#step-3--customize-the-bot)
+  * [Step 4: Set Up the Bot](#step-4--set-up-the-bot)
 
 
-## Information
+## What Can It Do? 🎮
 
-This script is going to be updated regularly to add new features, fix bugs, and improve the overall experience. If you have any suggestions, feel free to open an issue or contact me on Discord at "clad3815".
-
-## Getting Started
-
-Hop on this exciting journey with a few simple steps:
-
-1. Install NodeJS and npm on your system. If not installed, download NodeJS from [here](https://nodejs.org/en/download/).
-
-2. Clone or download the repository to your local machine:
-    ```bash
-    git clone https://github.com/Clad3815/Twitch-Streamer-GPT.git
-    ```
-    Not comfortable with cloning? No worries! [Download the zip version of the repository](https://github.com/Clad3815/Twitch-Streamer-GPT/archive/refs/heads/main.zip) and extract it at a suitable location. This is an easier alternative for our non-technical audience.
-
-3. Navigate to the repository directory:
-    ```bash
-    cd [DIR_NAME]
-    ```
-    Replace `[DIR_NAME]` with your chosen directory name.
-
-4. Install the required dependencies:
-    ```bash
-    npm install
-    ```
-    Or run the `install.bat` file.
-    
-
-5. Start the script (in background)
-    ```bash
-    npm start
-    ```
-    Or run the `start_all.bat` file.
+- **Talk with Your Viewers**: Respond to chat events like subscriptions, gifts, and more.
+- **Listen and Respond**: Use a special "wake word" to have the bot listen to you and talk back.
+- **Create Polls, Predictions, and More**: Ask the bot to perform actions like creating polls or changing your stream title, all through natural conversation.
 
 
-Voila! Your very own animation script is up and running! Now, gear up to amplify the fun and interactivity of your Twitch streams.
+## Get Started - It's Easy! 🛠️
 
-## Features
+### Step 1: Install Required Software
 
-Our Twitch Streamer Animation Script is backed with a wide array of amazing features:
+First, you'll need NodeJS and npm on your computer. Don't worry if you don't have them; just [download NodeJS from here](https://nodejs.org/), and it will install both for you.
 
-* **Wake Word Activation**: This feature allows the streamer to activate certain actions on the stream by using a unique keyword or phrase, referred to as the "wake word". Upon the streamer saying this phrase into their microphone, the GPT application listens to the microphone and responds, enriching the interactions on the stream.
-* **Automatic Speech Transcription**: Efficiently transcribe all your speech, opening doors for interesting usage.
-* **Twitch API Integration**: Smoothens and enhances your live stream operation.
-* **Voice Interactivity**: Maintains active conversations, livening up your stream.
-* **Channel Subscription Tracking**: Monitors all your channel subscriptions smartly.
-* **Ongoing Calibration**: The script adapts to your environment and offers optimal performance.
-* **Custom Command Settings**: With options to set custom commands, take full control over your streaming bot.
+### Step 2: Download the Bot
 
-## Integration with OpenAI / GPT-3.5 Turbo or GPT-4
+Click [here](https://github.com/Clad3815/Twitch-Streamer-GPT/archive/main.zip) to download the bot files. Once downloaded, unzip the folder.
 
-Our script features a strong integration with the powerful GPT-3.5 Turbo (or GPT-4) model from OpenAI to manage intricate interactive features. The model generates responses based on live stream events and natural language interactions with viewers.
+### Step 3: Customize the Bot
 
-The GPT-3.5 Turbo  (or GPT-4)  model takes several inputs into account for making a response:
+Inside the unzipped folder, you'll find a file named `.env.example`. This file lets you personalize the bot. Rename it to `.env` and follow the [Setup Tutorial](#setup-tutorial) to make it your own.
 
-1. **Chat History**: The interaction history till the current point helps derive responses that fit the context perfectly.
+### Step 4: Set Up the Bot
 
-2. **Stream State**: Details of the ongoing Twitch stream ensure relevancy in the responses generated.
+1. Open the unzipped folder and find the file named `install.bat`. Double-click it, and it will take care of the installation for you.
 
-3. **Channel and Bot Details**: Information about the bot and channel also contributes to response generation.
+2. Once the installation is done, find the file named `start_all.bat` and double-click it to start the bot.
 
-With GPT-3.5 Turbo  (or GPT-4) , the responses generated are not only contextually apt but also engage the audience with wit and interesting conversations.
+Your bot is now running and ready to make your streams more interactive and fun!
 
-### Personalized Responses
-
-You can provide custom instructions to the GPT-3.5 Turbo  (or GPT-4)  model to generate responses that are more personalized and relevant to your stream. 
-
-To do that edit the file `prompts/custom_instructions.txt` and add your custom instructions. These instructions will be injected into the GPT-3.5 Turbo  (or GPT-4) model to generate responses. (You can use any language you want)
-
-## What's New & Exciting
-
-#### Text-to-Speech Announcements
-
-Access automated TTS announcements for numerous activities, such as new subscriptions, cheers, resubscriptions, gift subscriptions, etc. Unique, context-relevant messages are composed by utilizing OpenAI GPT-3.5 Turbo (or GPT-4) and are converted into speech using ElevenLabs TTS API.
-
-#### Point Redemptions & Cheering Reactions
-
-The script also responds to special events like cheerings and point redemptions. You get personalized TTS announcements, OpenAI-generated responses, and even modifications in visual animations, resulting in an engaging experience for your viewers.
-
-To make the best use of this feature, our script combines the prowess of OpenAI's GPT-3.5 Turbo (or GPT-4) model and various APIs provided in the Twitch and ElevenLabs SDK.
-
-#### Voice Command Activation
-
-Employing Porcupine's wake word engine, our application listens for specific voice commands to trigger an action. By saying your customized wake word, you activate the artificial intelligence to listen and respond to your command. The captured voice command is transcribed by OpenAI's Whisper ASR system, then analyzed by GPT-3.5 Turbo (or GPT-4) to initiate a suitable action. This feature allows for a dynamic and interactive stream.
-
-#### Regular Calibration and Updates
-
-Our script continuously updates itself to keep aligned with the real-time stream state, making sure the Twitch streaming experience remains as dynamic as possible.
-
-
-## Setup Tutorial
+## Setup Tutorial 🎓
 
 Setting up this script involves three simple steps: defining the "Wake Word", setting up mp3 responses, and configuring the required environment variables.
 
@@ -183,98 +95,40 @@ Be certain to fill in the `.env` file with accurate credential details for each 
 
 **Important**: As it contains confidential data, ensure the `.env` file is always kept hidden to prevent inappropriate use.
 
+## Customize Your Bot's Personality 🎭
 
-## Twitch Bot and Broadcaster Scopes
+Want your bot to have a specific personality or way of speaking? You can easily customize its responses to fit your stream's vibe.
 
-To set up your application credentials correctly, include the necessary scopes for both your bot and broadcaster from Twitch.
+Inside the downloaded folder, you'll find a file named `prompts/custom_instructions.txt`. This file controls how the bot responds to different events and commands. By editing this file, you can give your bot a unique persona, instruct it how to answer questions, and more.
 
-### For Bot: 
+Here's a quick guide to help you out:
 
-You'll need to include these scopes: 
+1. **Open the File**: Navigate to the 'prompts' directory and open `custom_instructions.txt` in a text editor like Notepad.
 
-- `chat:read`: Read chat messages from all users including users in channels where the bot has been modded.
-- `chat:edit`: Send chat and channel messages.
+2. **Edit the Instructions**: Inside, you'll find various prompts and instructions that guide the bot's behavior. Feel free to modify them to suit your preferences. For example, you can make the bot speak more formally, add humor, etc. By default, the bot is set to be sarcastic and informal for fun.
 
-### For Broadcaster:
+3. **Save Your Changes**: Once you're done, save the file, and your changes will be automatically applied to the bot.
 
-You'll need to include these scopes:
+4. **Restart the Bot**: If the bot is running, restart it to see your changes in action.
 
-- `chat:read`: Read chat messages from all users including users in channels where the bot has been modded.
-- `chat:edit`: Send chat and channel messages.
-- `channel:read:redemptions`: Read redemption objects and to read all redemptions of Custom Rewards.
-- `bits:read`: Read Bits information for the channel.
-- `channel_subscriptions`: Read all subscriptions to a channel.
+Now your bot will respond in the unique style you've crafted. Have fun experimenting, and make your bot truly your own!
 
 
+## Need Something Special? 💼
 
-## Essential Environment Variables
+If you love the bot but want something extra special, I'm here to help! You can contact me on Discord at `clad3815` for a customized version tailored just for you.
 
-Configure the `.env` file with the following environment variables:
+## Need Help or Have Ideas? 🙌
 
-### OpenAI
+If you run into any issues or have ideas to make the bot even better, please [create an issue](https://github.com/Clad3815/Twitch-Streamer-GPT/issues), and I'll be happy to help.
 
-* **OPENAI_API_KEY**: Your API Key from OpenAI. Register and get your API key [here](https://platform.openai.com/account/api-keys).
+## License and Credits 📜
 
-* **OPENAI_MODEL**: Specifies the model to be used. Choose 'gpt-3.5-turbo' (cost-effective) or 'gpt-4' (high-quality but pricier).
+This project is inspired by the impressive work of [AIAssistantStreamer](https://github.com/anisayari/AIAssistantStreamer/) by [Defend Intelligence](https://www.youtube.com/c/DefendIntelligence-tech).
+This project is licensed under the MIT License, and a big shout-out goes to OpenAI, Elevenlabs, and Picovoice for their amazing technologies.
 
-* **OPENAI_BASEPATH**: Should be "https://api.openai.com/v1", unless needed otherwise.
+---
 
-* **OPENAI_MAX_TOKENS_TOTAL**: The max number of tokens to send to the API. The higher the number of tokens, the more expensive the operation becomes. Set to 0 for the model limit.
+Make your streams more interactive and fun today with **Twitch Streamer GPT**!
 
-* **OPENAI_MAX_TOKENS_ANSWER**: The maximum number of tokens the API will return. Set to 0 for no limit.
-
-* **OPENAI_MODEL_TEMP**: Temperature of the model between 0 and 1. A higher value will make the answers more random.
-
-### Porcupine
-
-* **PORCUPINE_API_KEY**: Your Porcupine API Key. Porcupine is a wake word engine, used to trigger the AI with a voice command.
-
-### ElevenLabs
-
-* **ELEVENLABS_APIKEY**: Your API Key for ElevenLabs service.
-
-* **ELEVENLABS_VOICEID**: The chosen voice ID from [here](https://api.elevenlabs.io/v1/voices).
-
-* **ELEVENLABS_VOICE_STABILITY**: Adjust to refine the voice’s stability. Higher values make the voice more stable.
-
-* **ELEVENLABS_VOICE_SIMILARITY_BOOST**: Adjust to enhance similarity to the original voice. Higher values make the voice more similar.
-
-### Twitch Bot 
-
-* **TWITCH_BOT_ACCESS_TOKEN**, **TWITCH_BOT_REFRESH_TOKEN**, **TWITCH_BOT_CLIEND_ID**: Your Twitch bot account details obtained from [Twitch Token Generator](https://twitchtokengenerator.com/).
-
-* **TWITCH_BOT_USERNAME**: Username of the Twitch bot.
-
-### Twitch Broadcaster 
-
-* **TWITCH_BROADCASTER_ACCESS_TOKEN**, **TWITCH_BROADCASTER_REFRESH_TOKEN**, **TWITCH_BROADCASTER_CLIEND_ID**: Details of the broadcaster’s Twitch account.
-
-* **TWITCH_CHANNEL_NAME**: The name of your Twitch channel to which the bot will join.
-
-* **TWITCH_POINT_REDEMPTIONS_TRIGGER**: The name of the Twitch points redemption triggering the AI.
-
-### Twitch Events 
-
-Activate or deactivate specific Twitch events by setting the corresponding value to 1 (activate) or 0 (deactivate):
-
-* **ENABLE_TWITCH_ONSUB**
-* **ENABLE_TWITCH_ONRESUB**
-* **ENABLE_TWITCH_ONSUBGIFT**
-* **ENABLE_TWITCH_ONCOMMUNITYSUB**
-* **ENABLE_TWITCH_ONPRIMEPAIDUPGRADE**
-* **ENABLE_TWITCH_ONGIFTPAIDUPGRADE**
-* **ENABLE_TWITCH_ONBITS**
-* **ENABLE_TWITCH_ONREDEMPTION**
-
-With all environment variables configured in your `.env` file, your Twitch Streamer Animation Script will be ready to run!
-
-Our team is readily available to assist if you encounter any problems during the setup.
-
-Experience a new dimension of Twitch streaming with our Twitch Streamer Animation Script. Break away from the conventional streaming experience, captivate your audience with a unique charm and watch your streaming channel grow! Try it today and feel the transformation yourself!
-
-
-
-## Conclusion and Support
-Though the Twitch Streamer Animation Script is immensely versatile, if you're a streamer in need of a super-customized solution, I'm available! You can hire me for personal guidance or support. Just ping me on Discord at "clad3815".
-
-Join hands with our Twitch Streamer Animation Script today, and be the game-changer in Twitch streaming. Elevate your livestreams to an unmatched realm of entertainment that leaves your audience spellbound. Watch your channel growth skyrocket and subscriber count multiply. Give it a spin and witness the revolution!
+---
