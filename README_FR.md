@@ -2,47 +2,57 @@
 [English version](README.md)
 
 ---
-### 🚨 Mise à jour Majeure - 06/08/2023 🚨
+### 0.0.1. 🚨 Mise à jour Majeure - 06/08/2023 🚨
 Mise à jour majeure vers la version 1.5. Veuillez vous assurer de tout réinstaller si vous mettez à jour depuis une version précédente. Vous pouvez conserver vos dossiers `prompts`, `wait_mp3`, `wake_word`, `wake_word_answer` ainsi que les fichiers `config.json` et `.env`.
-Pour le fichier `.env`, vous devrez ajouter les variables manquantes. Vous pouvez les trouver dans le fichier `.env.example`.
+0.1. Pour le fichier `.env`, vous devrez ajouter les variables manquantes. Vous pouvez les trouver dans le fichier `.env.example`.
 ---
 
-# Twitch Streamer GPT - Révolutionnez vos streams Twitch 🚀
+# 1. Twitch Streamer GPT - Révolutionnez vos streams Twitch 🚀
 
 Bienvenue dans **Twitch Streamer GPT** ! Cet outil incroyable apporte un tout nouveau niveau d'interactivité et de plaisir à vos streams Twitch. Que vous soyez un expert en technologie ou un débutant complet, vous pouvez facilement l'installer et commencer à vous amuser. Voici ce qu'il contient :
 
-## Table des Matières 📑
+## 1.1. Table des Matières
 
-- [Qu'est-ce qu'il peut faire ?](#quest-ce-quil-peut-faire-)
-- [Commencer - C'est Facile !](#commencer---cest-facile-)
-  * [Étape 1 : Installer les Logiciels Requis](#étape-1--installer-les-logiciels-requis)
-  * [Étape 2 : Télécharger le Bot](#étape-2--télécharger-le-bot)
-  * [Étape 3 : Personnaliser le Bot](#étape-3--personnaliser-le-bot)
-  * [Étape 4 : Installer le Bot](#étape-4--installer-le-bot)
+- [1. Twitch Streamer GPT - Révolutionnez vos streams Twitch 🚀](#1-twitch-streamer-gpt---révolutionnez-vos-streams-twitch-)
+  - [1.1. Table des Matières](#11-table-des-matières)
+  - [1.2. Qu'est-ce qu'il peut faire ? 🎮](#12-quest-ce-quil-peut-faire--)
+  - [1.3. Commencer - C'est Facile ! 🛠️](#13-commencer---cest-facile--️)
+    - [1.3.1. Étape 1 : Installer les Logiciels Requis](#131-étape-1--installer-les-logiciels-requis)
+    - [1.3.2. Étape 2 : Télécharger le Bot](#132-étape-2--télécharger-le-bot)
+    - [1.3.3. Étape 3 : Personnaliser le Bot](#133-étape-3--personnaliser-le-bot)
+    - [1.3.4. Étape 4 : Installer le Bot](#134-étape-4--installer-le-bot)
+  - [1.4. Tutoriel de Configuration 🎓](#14-tutoriel-de-configuration-)
+    - [1.4.1. Étape 1 : Personnaliser le Mot d'Éveil](#141-étape-1--personnaliser-le-mot-déveil)
+    - [1.4.2. Étape 2 : Configurer les Réponses MP3](#142-étape-2--configurer-les-réponses-mp3)
+    - [1.4.3. Étape 3 : Ajuster les Variables d'Environnement](#143-étape-3--ajuster-les-variables-denvironnement)
+  - [1.5. Personnalisez la Personnalité de Votre Bot 🎭](#15-personnalisez-la-personnalité-de-votre-bot-)
+  - [1.6. Besoin de Quelque Chose de Spécial ? 💼](#16-besoin-de-quelque-chose-de-spécial--)
+  - [1.7. Besoin d'Aide ou des Idées ? 🙌](#17-besoin-daide-ou-des-idées--)
+  - [1.8. Licence et Crédits 📜](#18-licence-et-crédits-)
 
 
-## Qu'est-ce qu'il peut faire ? 🎮
+## 1.2. Qu'est-ce qu'il peut faire ? 🎮
 
 - **Parler avec vos spectateurs**: Répondre aux événements de chat tels que les abonnements, les cadeaux, etc.
 - **Écouter et Répondre**: Utilisez un mot-clé spécial pour que le bot vous écoute et vous réponde.
 - **Créer des sondages, des prédictions, et plus encore**: Demandez au bot d'effectuer des actions comme créer des sondages ou changer le titre de votre stream, le tout en conversation naturelle.
 
 
-## Commencer - C'est Facile ! 🛠️
+## 1.3. Commencer - C'est Facile ! 🛠️
 
-### Étape 1 : Installer les Logiciels Requis
+### 1.3.1. Étape 1 : Installer les Logiciels Requis
 
 Tout d'abord, vous aurez besoin de NodeJS et npm sur votre ordinateur. Ne vous inquiétez pas si vous ne les avez pas ; il suffit de [télécharger NodeJS ici](https://nodejs.org/), et il installera les deux pour vous.
 
-### Étape 2 : Télécharger le Bot
+### 1.3.2. Étape 2 : Télécharger le Bot
 
 Cliquez [ici](https://github.com/Clad3815/Twitch-Streamer-GPT/archive/main.zip) pour télécharger les fichiers du bot. Une fois téléchargés, décompressez le dossier.
 
-### Étape 3 : Personnaliser le Bot
+### 1.3.3. Étape 3 : Personnaliser le Bot
 
 Dans le dossier décompressé, vous trouverez un fichier nommé `.env.example`. Ce fichier vous permet de personnaliser le bot. Renommez-le en `.env` et suivez le [Tutoriel de Configuration](#tutoriel-de-configuration-) pour le personnaliser.
 
-### Étape 4 : Installer le Bot
+### 1.3.4. Étape 4 : Installer le Bot
 
 1. Ouvrez le dossier décompressé et trouvez le fichier nommé `install.bat`. Double-cliquez dessus, et il s'occupera de l'installation pour vous.
 
@@ -50,11 +60,11 @@ Dans le dossier décompressé, vous trouverez un fichier nommé `.env.example`. 
 
 Votre bot fonctionne maintenant et est prêt à rendre vos streams plus interactifs et amusants !
 
-## Tutoriel de Configuration 🎓
+## 1.4. Tutoriel de Configuration 🎓
 
 La configuration de ce script comprend trois étapes simples : définir le "mot d'éveil", configurer les réponses mp3, et configurer les variables d'environnement nécessaires.
 
-### Étape 1 : Personnaliser le Mot d'Éveil
+### 1.4.1. Étape 1 : Personnaliser le Mot d'Éveil
 
 Le 'mot d'éveil' identifie un mot ou une phrase précise choisis par le streamer. Lorsqu'il est prononcé dans leur micro, cela incite l'application GPT à écouter et réagir indirectement à la commande du streamer, enrichissant l'interaction pendant le stream en direct.
 Vous trouverez le fichier 'porcupine_params_*.pv' et plusieurs fichiers '.ppn' dans le répertoire 'wake_word'.
@@ -73,7 +83,7 @@ Voici comment créer un nouveau fichier .ppn :
 
   4. Ajoutez le nouveau fichier de mot d'éveil au répertoire 'wake_word' de votre projet.
 
-### Étape 2 : Configurer les Réponses MP3
+### 1.4.2. Étape 2 : Configurer les Réponses MP3
 
 Le script déclenche des réponses mp3 pour deux actions - reconnaître le mot d'éveil et attendre une réponse d'OpenAI. Bien que vous puissiez utiliser n'importe quel fichier mp3, nous recommandons d'utiliser la synthèse vocale d'Elevenlabs pour plus de cohérence.
 
@@ -82,7 +92,7 @@ Le script déclenche des réponses mp3 pour deux actions - reconnaître le mot d
 - **Mp3 de Détection du Mot d'Éveil**: Les fichiers mp3 dans le répertoire 'wake_word_answer' sont joués après la reconnaissance du mot d'éveil. N'hésitez pas à ajouter un nombre illimité de fichiers mp3 ici, car le script en sélectionne un au hasard à chaque fois.
 
 
-### Étape 3 : Ajuster les Variables d'Environnement
+### 1.4.3. Étape 3 : Ajuster les Variables d'Environnement
 
 Renommez d'abord le fichier `.env.example` en `.env`, puis ouvrez-le dans un éditeur de texte. Ce fichier contient toutes les variables d'environnement requises pour le fonctionnement du script.
 
@@ -92,7 +102,7 @@ Assurez-vous de remplir le fichier `.env` avec les détails d'identification pr�
 
 **Important**: Comme il contient des données confidentielles, assurez-vous que le fichier `.env` est toujours caché pour éviter une utilisation inappropriée.
 
-## Personnalisez la Personnalité de Votre Bot 🎭
+## 1.5. Personnalisez la Personnalité de Votre Bot 🎭
 
 Vous voulez que votre bot ait une personnalité ou une façon de parler spécifique ? Vous pouvez facilement personnaliser ses réponses pour qu'elles correspondent à l'ambiance de votre stream.
 
@@ -110,15 +120,15 @@ Voici un guide rapide pour vous aider :
 
 Maintenant, votre bot répondra dans le style unique que vous avez créé. Amusez-vous à expérimenter et faites de votre bot quelque chose de vraiment unique !
 
-## Besoin de Quelque Chose de Spécial ? 💼
+## 1.6. Besoin de Quelque Chose de Spécial ? 💼
 
 Si vous aimez le bot mais que vous voulez quelque chose d'encore plus spécial, je suis là pour vous aider ! Vous pouvez me contacter sur Discord à `clad3815` pour une version personnalisée adaptée spécialement pour vous.
 
-## Besoin d'Aide ou des Idées ? 🙌
+## 1.7. Besoin d'Aide ou des Idées ? 🙌
 
 Si vous rencontrez des problèmes ou si vous avez des idées pour améliorer encore le bot, veuillez [créer un problème](https://github.com/Clad3815/Twitch-Streamer-GPT/issues), et je me ferai un plaisir de vous aider.
 
-## Licence et Crédits 📜
+## 1.8. Licence et Crédits 📜
 
 Ce projet est sous licence MIT, et un grand merci à OpenAI, Elevenlabs, et Picovoice pour leurs technologies incroyables.
 
