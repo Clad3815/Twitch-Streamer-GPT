@@ -19,6 +19,8 @@ const botUsername = process.env.TWITCH_BOT_USERNAME;
 const channelName = process.env.TWITCH_CHANNEL_NAME;
 const enableDebug = process.env.DEBUG_MODE == "1";
 
+const ElevenLabsActivated = process.env.ELEVENLABS_ACTIVATED ? process.env.ELEVENLABS_ACTIVATED === "1" : true;
+
 
 let botFunctions;
 let voiceData = null;
@@ -146,6 +148,8 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
                 messages: messagesToUse,
                 temperature: parseFloat(process.env.OPENAI_MODEL_TEMP),
                 max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS_ANSWER),
+                frequency_penalty: parseFloat(process.env.OPENAI_MODEL_FREQ_PENALTY),
+                presence_penalty: parseFloat(process.env.OPENAI_MODEL_PRESENCE_PENALTY),
                 function_call: functions ? "auto" : "none",
                 functions: functions,
             });
@@ -167,18 +171,22 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
     if (textAnswer) {
         console.log("Message received from OpenAI API:");
         console.log(textAnswer + "\n");
-        console.log("Generating TTS of the message with ElevenLabs API");
-        try {
-            const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
-            if (gptAnswer.function_call) {
-                // Play the TTS
-                if (audioStream)   voiceHandler.playBufferingStream(audioStream);
-            } else { 
-                // Play the TTS
-                if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
+        if (ElevenLabsActivated) {
+            console.log("Generating TTS of the message with ElevenLabs API");
+            try {
+                const audioStream = await voiceHandler.generateElevenLabsTTS(textAnswer);
+                if (gptAnswer.function_call) {
+                    // Play the TTS
+                    if (audioStream)   voiceHandler.playBufferingStream(audioStream);
+                } else { 
+                    // Play the TTS
+                    if (audioStream)   await voiceHandler.playBufferingStream(audioStream);
+                }
+            } catch (error) {
+                if (enableDebug) console.log("Error while generating TTS with ElevenLabs API:", error);
             }
-        } catch (error) {
-            if (enableDebug) console.log("Error while generating TTS with ElevenLabs API:", error);
+        } else {
+            console.log("(ElevenLabs TTS is disabled)");
         }
     }
     if (gptAnswer.function_call) {

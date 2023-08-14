@@ -218,7 +218,7 @@ async function main() {
                 if (redemptionTrigger == message.rewardTitle) {
                     console.log(`Message: ${message.message}`);
                     if (!await openaiLib.analyseMessage(message.message)) {
-                        bot.say(channelName, promptsConfig.warningMessage);
+                        bot.say(channelName, promptsConfig.warningMessage.replace('{userName}', message.userDisplayName));
                         return;
                     }
                     const enableGoogleTTS = process.env.READ_CHANNEL_POINT_REDEMPTIONS === '1';
@@ -256,7 +256,7 @@ async function main() {
                         .replace('{message}', message.message);
 
                     if (!await openaiLib.analyseMessage(prompt)) {
-                        bot.say(channelName, promptsConfig.warningMessage);
+                        bot.say(channelName, promptsConfig.warningMessage.replace('{userName}', message.userName));
                         return;
                     }
                     
