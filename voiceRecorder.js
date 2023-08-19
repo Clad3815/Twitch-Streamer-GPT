@@ -154,6 +154,7 @@ async function startListening() {
         const frames = await recorder.read();
 
         if (isRecording) {
+            // processFrames(frames);
             recordingFrames.push(frames);
 
             const isSilence = await handleSilenceDetection(frames);
@@ -186,10 +187,30 @@ async function handleSilenceDetection(frames) {
     if (USE_NODE_VAD) {
         const framesBuffer = Buffer.from(frames);
         const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
-        return res === VAD.Event.SILENCE;
+        console.log(`VAD result: ${res}`);
+        switch (res) {
+            case VAD.Event.VOICE:
+                return false; // Voice detected, not silence
+            case VAD.Event.SILENCE:
+            case VAD.Event.NOISE:
+            case VAD.Event.ERROR:
+            default:
+                return true; // All other cases treated as silence
+        }
     } else {
         return frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;
     }
+}
+
+function processFrames(frames) {
+    if (!USE_NODE_VAD) return frames; // If not using node-vad, return frames as-is
+
+    const framesBuffer = Buffer.from(frames);
+    vad.processAudio(framesBuffer, recorder.sampleRate).then(res => {
+        if (res === VAD.Event.VOICE) {
+            recordingFrames.push(frames);
+        }
+    }).catch(console.error);
 }
 
 function saveMicrophoneInput(deviceId) {

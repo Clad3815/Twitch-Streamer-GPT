@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { OpenAIApi, Configuration } = require('openai');
+const OpenAI = require('openai');
 
 const tiktoken = require('js-tiktoken');
 
@@ -43,10 +43,11 @@ try {
 
 const AIModel = process.env.OPENAI_MODEL;
 
-const openai = new OpenAIApi(new Configuration({
+const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    basePath: process.env.OPENAI_BASEPATH,
-}));
+    baseURL: process.env.OPENAI_BASEPATH
+});
+
 loadHistory();
 
 let streamInfos = {
@@ -85,14 +86,32 @@ function loadHistory() {
 }
 
 async function analyseMessage(text) {
-    const response = await openai.createModeration({
+    const response = await openai.moderations.create({
         input: text,
     });
-    if (response.data.results[0].flagged) {
+    if (response.results[0].flagged) {
         console.log("Message flagged as inappropriate");
         return false;
     }
     return true;
+}
+
+async function shortenAnswer(answer) {
+    const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+            {
+                "role": "system",
+                "content": "Your task is to shorten the following answer to "+(process.env.OPENAI_MAX_CARACTERS_INSTRUCTIONS || 100)+" characters or less without breaking the meaning of the answer. You need to respect the tone of the answer and the context of the conversation, you need to also respect the input language."
+            },
+            {
+                "role": "user",
+                "content": answer
+            }
+        ],
+        temperature: 0,
+    });
+    return response.choices[0].message.content;
 }
 
 async function answerToMessage(userData, message, isFunctionCall = false) {
@@ -143,7 +162,7 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
                 console.log(JSON.stringify(messagesToUse, null, 2));
 
             }
-            result = await openai.createChatCompletion({
+            result = await openai.chat.completions.create({
                 model: modelToUse,
                 messages: messagesToUse,
                 temperature: parseFloat(process.env.OPENAI_MODEL_TEMP),
@@ -165,9 +184,25 @@ async function answerToMessage(userData, message, isFunctionCall = false) {
     if (result == null) {
         throw new Error("Error while sending message to OpenAI API");
     }
-    let gptAnswer = result.data.choices[0].message;
+    let gptAnswer = result.choices[0].message;
+    if (process.env.OPENAI_REWRITE_LARGE_ANSWERS === '1') {
+        const maxLength = parseInt((process.env.OPENAI_MAX_CARACTERS_INSTRUCTIONS || 100)) * 1.3;
+        if (gptAnswer.content) {
+            if (gptAnswer.content.length > maxLength) {
+                if (enableDebug) {
+                    console.log("Answer too long, shortening it. Original length: "+gptAnswer.content.length+" characters. ("+gptAnswer.content+")");
+                }
+                gptAnswer.content = await shortenAnswer(gptAnswer.content);
+                if (enableDebug) {
+                    console.log("Shortened answer: "+gptAnswer.content + " (Length: "+gptAnswer.content.length+" characters)");
+                }
+            }
+        }
+    }
+    let textAnswer = gptAnswer['content'];
+
+
     history.push(gptAnswer);
-    const textAnswer = gptAnswer['content'];
     if (textAnswer) {
         console.log("Message received from OpenAI API:");
         console.log(textAnswer + "\n");
@@ -424,8 +459,8 @@ function getCleanedMessagesForModel(messages, model) {
 async function speechToText(filePath) {
     const keysString = Object.keys(correctWords).join(', ');
 
-    const response = await openai.createTranscription(fs.createReadStream(filePath), "whisper-1", keysString);
-    return response.data.text;
+    const response = await openai.audio.transcriptions.create({ model: "whisper-1", file: fs.createReadStream(filePath), prompt: keysString });
+    return response.text;
 }
 
 
