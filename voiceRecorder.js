@@ -19,29 +19,28 @@ const VAD_MODE = process.env.VOICE_ACTIVATION_MODE_LEVEL || "NORMAL";
 let VAD, vad;
 if (USE_NODE_VAD) {
     VAD = require('node-vad');
-    vad = new VAD(VAD.Mode.NORMAL);
     if (enableDebug) {
         console.log(`VAD mode: ${VAD_MODE}`);
+    }
+    switch (VAD_MODE) {
+        case "NORMAL":
+            vad = new VAD(VAD.Mode.NORMAL);
+            break;
+        case "LOW_BITRATE":
+            vad = new VAD(VAD.Mode.LOW_BITRATE);
+            break;
+        case "AGGRESSIVE":
+            vad = new VAD(VAD.Mode.AGGRESSIVE);
+            break;
+        case "VERY_AGGRESSIVE":
+            vad = new VAD(VAD.Mode.VERY_AGGRESSIVE);
+        default:
+            vad = new VAD(VAD.Mode.NORMAL);
+            break;
     }
 }
 
 
-switch (VAD_MODE) {
-    case "NORMAL":
-        vad = new VAD(VAD.Mode.NORMAL);
-        break;
-    case "LOW_BITRATE":
-        vad = new VAD(VAD.Mode.LOW_BITRATE);
-        break;
-    case "AGGRESSIVE":
-        vad = new VAD(VAD.Mode.AGGRESSIVE);
-        break;
-    case "VERY_AGGRESSIVE":
-        vad = new VAD(VAD.Mode.VERY_AGGRESSIVE);
-    default:
-        vad = new VAD(VAD.Mode.NORMAL);
-        break;
-}
 
 
 
