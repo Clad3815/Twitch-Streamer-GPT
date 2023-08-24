@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "start node voiceRecorder.js && start node twitchBot.js",
     "choose-mic": "node voiceRecorder.js --choose-mic",
+    "calibrate": "node voiceRecorder.js --calibrate",
     "choose-speaker": "node voiceRecorder.js --choose-speaker"
   },
   "author": "Clad3815",
