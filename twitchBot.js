@@ -72,8 +72,15 @@ const tmiClient = new tmi.Client({
 
 console.log("Bot started and listening to channel " + channelName);
 
+async function randomDelay(minMs = 1, maxMs = 100) {
+    const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+
 async function handleTwitchEvent(eventHandler, data) {
     // Add the action to the queue
+    await randomDelay();
     await voiceHandler.addActionToQueue(() => eventHandler(data));
 }
 
@@ -90,18 +97,33 @@ if (process.env.ENABLE_TWITCH_ONRESUB === '1') {
     });
 }
 
-// if (process.env.ENABLE_TWITCH_ONSUBGIFT === '1') {
-//     tmiClient.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
-//         let senderCount = ~~userstate["msg-param-sender-count"];
-//         handleTwitchEvent(handleOnSubGift, { broadcasterName: channel, gifterName: username, recipient: recipient, totalGiftSubCount: senderCount });
-//     });
-// }
 
 if (process.env.ENABLE_TWITCH_ONCOMMUNITYSUB === '1') {
     tmiClient.on("submysterygift", (channel, username, numbOfSubs, methods, userstate) => {
         let senderCount = ~~userstate["msg-param-sender-count"];
         handleTwitchEvent(handleOnCommunitySub, { broadcasterName: channel, gifterName: username, giftSubCount: numbOfSubs, totalGiftSubCount: senderCount });
     });
+}
+if (process.env.ENABLE_TWITCH_ONHYPECHAT === '1') {
+    tmiClient.on("message", (channel, tags, message, self) => {
+        if(tags['pinned-chat-paid-amount']) {
+            const paidAmount = tags['pinned-chat-paid-amount'];
+            const paidCurrency = tags['pinned-chat-paid-currency'];
+            const paidExponent = tags['pinned-chat-paid-exponent'];
+            const paidLevel = tags['pinned-chat-paid-level'];
+            const isSystemMessage = tags['pinned-chat-paid-is-system-message'] === '1';
+            
+            handleTwitchEvent(handleHypeChat, { 
+                paidAmount, 
+                paidCurrency, 
+                paidExponent, 
+                paidLevel, 
+                isSystemMessage,
+                userMessage: message
+            });
+        }
+    });
+    
 }
 
 
@@ -182,6 +204,30 @@ async function handleOnGiftPaidUpgrade({ broadcasterName, userName, gifterDispla
     const prompt = promptsConfig.onGiftPaidUpgrade.replace('{userName}', userName).replace('{gifterDisplayName}', gifterDisplayName).replace('{broadcasterName}', broadcasterName);
     openaiLib.answerToMessage(userData, prompt).then((message) => {
         bot.say(channelName, message);
+    });
+}
+
+async function handleHypeChat({ paidAmount, paidCurrency, paidExponent, paidLevel, isSystemMessage, userMessage }) {
+    const actualAmount = paidAmount / Math.pow(10, paidExponent); // Convert the amount to actual value based on the exponent.
+    let prompt;
+    if (isSystemMessage) {
+        prompt = promptsConfig.onHypeChatSystem
+            .replace('{amount}', actualAmount)
+            .replace('{currency}', paidCurrency)
+            .replace('{level}', paidLevel);
+    } else {
+        prompt = promptsConfig.onHypeChatUser
+            .replace('{amount}', actualAmount)
+            .replace('{currency}', paidCurrency)
+            .replace('{level}', paidLevel)
+            .replace('{message}', userMessage);
+    }
+
+    const userData = {
+        name: "system"
+    };
+    openaiLib.answerToMessage(userData, prompt).then((answerMessage) => {
+        bot.say(channelName, answerMessage);
     });
 }
 
