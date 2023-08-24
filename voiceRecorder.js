@@ -11,16 +11,20 @@ const axios = require('axios');
 
 dotenv.config();
 
+const USE_NODE_VAD = process.env.USE_NODE_VAD === '1';
 const enableDebug = process.env.DEBUG_MODE === '1';
 const portNumber = process.env.PORT_NUMBER;
 
-let VAD, vad;
-VAD = require('node-vad');
-
 const VAD_MODE = process.env.VOICE_ACTIVATION_MODE_LEVEL || "NORMAL";
-if (enableDebug) {
-    console.log(`VAD mode: ${VAD_MODE}`);
+let VAD, vad;
+if (USE_NODE_VAD) {
+    VAD = require('node-vad');
+    vad = new VAD(VAD.Mode.NORMAL);
+    if (enableDebug) {
+        console.log(`VAD mode: ${VAD_MODE}`);
+    }
 }
+
 
 switch (VAD_MODE) {
     case "NORMAL":
@@ -50,6 +54,7 @@ if (enableDebug) {
 
 let MICROPHONE_DEVICE = -1;
 const CONFIG_FILE = './config.json';
+let SILENCE_THRESHOLD = -1;
 const MAX_SILENCE_FRAMES = 48;
 
 let recorder;
@@ -70,7 +75,26 @@ function handleUnhandledRejection(reason, promise) {
     console.error('Reason:', reason);
     console.error('Promise:', promise);
 }
+async function calibrate() {
+    console.log("Calibrating...");
 
+    let framesArray = [];
+    const calibrationDuration = 5000; // 5 seconds
+    const startTime = Date.now();
+
+    try {
+        while (Date.now() - startTime < calibrationDuration) {
+            const frames = await recorder.read();
+            framesArray.push(...frames);
+        }
+        const average = framesArray.reduce((a, b) => a + Math.abs(b), 0) / framesArray.length;
+        SILENCE_THRESHOLD = average * 1.5;
+        console.log(`Calibration completed. SILENCE_THRESHOLD set to ${SILENCE_THRESHOLD}`);
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify({ MICROPHONE_DEVICE, SILENCE_THRESHOLD }));
+    } catch (error) {
+        console.error(`Error during calibration: ${error}`);
+    }
+}
 async function pressAnyKeyToContinue() {
     return new Promise((resolve) => {
         console.log("Please turn on microphone. Press any key to start 5 seconds of silence for calibration...");
@@ -182,21 +206,26 @@ async function startListening() {
 }
 
 async function handleSilenceDetection(frames) {
-    const framesBuffer = Buffer.from(frames);
-    const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
-    console.log(`VAD result: ${res}`);
-    switch (res) {
-        case VAD.Event.VOICE:
-            return false; // Voice detected, not silence
-        case VAD.Event.SILENCE:
-        case VAD.Event.NOISE:
-        case VAD.Event.ERROR:
-        default:
-            return true; // All other cases treated as silence
+    if (USE_NODE_VAD) {
+        const framesBuffer = Buffer.from(frames);
+        const res = await vad.processAudio(framesBuffer, recorder.sampleRate);
+        console.log(`VAD result: ${res}`);
+        switch (res) {
+            case VAD.Event.VOICE:
+                return false; // Voice detected, not silence
+            case VAD.Event.SILENCE:
+            case VAD.Event.NOISE:
+            case VAD.Event.ERROR:
+            default:
+                return true; // All other cases treated as silence
+        }
+    } else {
+        return frames.filter(frame => Math.abs(frame) < SILENCE_THRESHOLD).length / frames.length >= 0.9;       
     }
 }
 
 function processFrames(frames) {
+    if (!USE_NODE_VAD) return frames; // If not using node-vad, return frames as-is
     const framesBuffer = Buffer.from(frames);
     vad.processAudio(framesBuffer, recorder.sampleRate).then(res => {
         if (res === VAD.Event.VOICE) {
@@ -207,7 +236,7 @@ function processFrames(frames) {
 
 function saveMicrophoneInput(deviceId) {
     MICROPHONE_DEVICE = deviceId;
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ MICROPHONE_DEVICE }));
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ MICROPHONE_DEVICE, SILENCE_THRESHOLD }));
     console.log(`Microphone input saved: ${deviceId}`);
 }
 
@@ -215,13 +244,20 @@ function readConfig() {
     if (fs.existsSync(CONFIG_FILE)) {
         const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
         MICROPHONE_DEVICE = config.MICROPHONE_DEVICE || MICROPHONE_DEVICE;
+        SILENCE_THRESHOLD = config.SILENCE_THRESHOLD || SILENCE_THRESHOLD;
     }
 }
 
 function initMicrophone() {
     console.log(`Using microphone device: ${recorder.getSelectedDevice()} | Wrong device? Run \`npm run choose-mic\` to select the correct input.`);
     recorder.start();
-    startListening();
+    if (USE_NODE_VAD) {
+        startListening();
+    } else {
+        pressAnyKeyToContinue()
+            .then(calibrate)
+            .then(startListening);
+    }
    
 }
 
