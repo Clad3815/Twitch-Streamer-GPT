@@ -56,7 +56,7 @@ async function generateElevenLabsTTS(text) {
 
 
 
-    textForElevenLabs = textForElevenLabs.replace(/\d+/g, (number) => ' ' + writtenNumber(number, { lang: 'fr' }));
+    // textForElevenLabs = textForElevenLabs.replace(/\d+/g, (number) => ' ' + writtenNumber(number, { lang: 'fr' }));
 
     if (enableDebug) {
         console.log('Text:', text);
