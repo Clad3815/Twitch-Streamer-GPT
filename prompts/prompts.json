@@ -7,7 +7,5 @@
     "onGiftPaidUpgrade": "{userName} vient de passer d'un abonnement cadeau offert par {gifterDisplayName} à un abonnement Tier 1 sur la chaîne {broadcasterName} !",
     "onBits": "{userName} vient de cheer {bits} bits sur la chaîne {broadcasterName} (Total envoyé depuis le début de la chaîne par le viewer: {totalBits}) avec le message: {message}",
     "warningMessage": "Désolé, {userName}, mais nous n'acceptons pas ce genre de langage ici. Essayons de garder le chat respectueux et amusant pour tout le monde !",
-    "ttsMessage": "Message de {userDisplayName}: {message}",
-    "onHypeChatSystem": "{userName} a envoyé un Hype Chat de {amount} {currency} !",
-    "onHypeChatUser": "{userName} a envoyé un Hype Chat de {amount} {currency} avec le message: {message}"
+    "ttsMessage": "Message de {userDisplayName}: {message}"
 }
