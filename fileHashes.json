@@ -1,0 +1,15 @@
+{
+  "audioPlayer.js": "839480a9eafa922b77bc6004474799a3b23987d5",
+  "install.bat": "7f66a89a5fccb7626f5a7f7d1fef566da647abfe",
+  "install_node_vad.bat": "9c820d26cfd768098dd8a930efbabb9a81ebf921",
+  "modules/botFunctions.js": "0d6aaeefb3c574d295ffb7b5d6333c8fcb4b0914",
+  "modules/constants.js": "2e03b2092cf4adc17e009ecabf84674ac526ed19",
+  "modules/openaiLib.js": "fd852b31d65ad36bd6386695b3e3eda36e6ae005",
+  "modules/voiceHandler.js": "cf58edab72dc30eb63f3989fe57a097a3bebdd43",
+  "start_all.bat": "fd9ed52123796471abadaaff03be285ea606b278",
+  "start_microphone_recorder.bat": "cbb386a39d516acf975cb0cb2a6dae747b36d1d9",
+  "start_twitch_bot.bat": "7559761886fb79a03c19df64e604bdc7266c739e",
+  "twitchBot.js": "be569a0ac5df9a2ad0627ce5bb2bf2265c4f6a66",
+  "update.bat": "6ba7534fa51beb65cd295a37c6306ed5af816fd5",
+  "voiceRecorder.js": "3b980ef5e6b72e7c3dbeca09d3b9f2d89b6d2a0b"
+}
