@@ -411,6 +411,9 @@ function getCleanedMessagesForModel(messages, model) {
 
     let totalTokens = calculateGPTTokens([messages[0]], model); // Add tokens for the system prompt
 
+    // Add 500 tokens for the functions call
+    totalTokens += 500;
+
     // Now, get the cleaned messages for the selected model
     let cleanedMessages = [messages[0]]; // Start with the system prompt
 
