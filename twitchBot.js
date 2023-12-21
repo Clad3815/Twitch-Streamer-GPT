@@ -20,19 +20,21 @@ app.use(express.json());
 const promptsConfig = JSON.parse(fs.readFileSync('./prompts/prompts.json', 'utf-8'));
 
 
-if (enableDebug) {
-    process.on('uncaughtException', (err, origin) => {
+process.on('uncaughtException', (err, origin) => {
+    if (enableDebug) {
         console.error('An uncaught exception occurred!');
         console.error(err);
         console.error('Exception origin:', origin);
-    });
+    }
+});
 
-    process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, promise) => {
+    if (enableDebug) {
         console.error('An unhandled rejection occurred!');
         console.error('Reason:', reason);
         console.error('Promise:', promise);
-    });
-}
+    }
+});
 
 
 const clientId = process.env.TWITCH_BOT_CLIEND_ID;
